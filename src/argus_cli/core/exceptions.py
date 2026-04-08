@@ -53,10 +53,6 @@ class AuthenticationError(ArgusError):
 
 
 class CLIExitError(ArgusError):
-    """Custom CLI exit exception that inherits from BaseException."""
+    """Custom CLI exit exception."""
 
     pass
-
-
-# Backward compatibility alias - LookupError was renamed to avoid shadowing builtin
-LookupError = IpLookupError  # noqa: A001

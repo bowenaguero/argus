@@ -1,7 +1,6 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 from rich.console import Console
 
@@ -9,7 +8,7 @@ from rich.console import Console
 class ArgusLogger:
     """Centralized logging configuration for Argus CLI."""
 
-    def __init__(self, name: str = "argus", console: Optional[Console] = None):
+    def __init__(self, name: str = "argus", console: Console | None = None):
         self.name = name
         self.console = console
         self.logger = self._setup_logger()
@@ -78,10 +77,10 @@ class ArgusLogger:
 
 
 # Global logger instance
-_logger: Optional[ArgusLogger] = None
+_logger: ArgusLogger | None = None
 
 
-def get_logger(console: Optional[Console] = None) -> ArgusLogger:
+def get_logger(console: Console | None = None) -> ArgusLogger:
     """Get or create the global logger instance."""
     global _logger
     if _logger is None:

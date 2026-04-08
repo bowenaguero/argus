@@ -20,13 +20,13 @@ class Config:
     def _get_data_dir(self) -> Path:
         return Path(user_data_dir("argus", appauthor=False))
 
-    def get_license_key(self, license_key_name) -> str | None:
+    def get_license_key(self, license_key_name: str) -> str | None:
         if not os.path.exists(self.config_file):
             return None
 
         try:
-            with open(self.config_file) as f:
+            with open(self.config_file, encoding="utf-8") as f:
                 config = json.load(f)
                 return config.get(license_key_name)
-        except (json.JSONDecodeError, Exception):
+        except Exception:
             return None

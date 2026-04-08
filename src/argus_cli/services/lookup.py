@@ -58,7 +58,6 @@ class GeoIPLookup:
                 result["proxy_type"] = proxy_record["proxy_type"] if proxy_record["proxy_type"] != "-" else None
                 result["domain"] = proxy_record["domain"] if proxy_record["domain"] != "-" else None
                 result["isp"] = proxy_record["isp"] if proxy_record["isp"] != "-" else None
-                result["domain_name"] = proxy_record["domain"] if proxy_record["domain"] != "-" else None
                 result["usage_type"] = proxy_record["usage_type"] if proxy_record["usage_type"] != "-" else None
 
         if self.org_lookup.has_org_dbs:
@@ -75,8 +74,7 @@ class GeoIPLookup:
 
         show_progress = len(ips) > 1
 
-        if self.org_lookup.load_databases():
-            self.org_lookup.has_org_dbs = True
+        self.org_lookup.load_databases()
 
         proxy_db = None
         if self.has_proxy_db:
@@ -110,5 +108,6 @@ class GeoIPLookup:
         finally:
             if proxy_db:
                 proxy_db.close()
+            self.org_lookup.close()
 
         return results

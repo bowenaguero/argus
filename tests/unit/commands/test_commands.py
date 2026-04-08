@@ -7,7 +7,6 @@ import pytest
 
 from argus_cli.commands.lookup import LookupCommand
 from argus_cli.commands.setup import SetupCommand
-from argus_cli.core.exceptions import ValidationError
 
 
 class TestSetupCommand:
@@ -138,36 +137,6 @@ class TestLookupCommand:
                                     assert result is not None
                                     assert len(result) == 1
                                     assert result[0]["ip"] == "8.8.8.8"
-
-    @patch("argus_cli.utils.validators.ParameterValidator.validate_ip")
-    def test_execute_with_validation_error(self, mock_validate_ip, lookup_command):
-        """Test lookup execution with validation error."""
-
-        mock_validate_ip.side_effect = ValidationError("Invalid IP")
-
-        with patch.object(lookup_command, "db_manager") as mock_db:
-            mock_db.ensure_databases = MagicMock()
-
-            with patch("argus_cli.commands.lookup.typer.Exit") as mock_exit_class:
-                mock_exit_class.side_effect = lambda code=0: SystemExit(code)
-                with pytest.raises(SystemExit) as exc_info:
-                    lookup_command.execute(
-                        ip="invalid_ip",
-                        file=None,
-                        output=None,
-                        output_format="json",
-                        exclude_country=None,
-                        exclude_city=None,
-                        exclude_asn=None,
-                        exclude_org=None,
-                        exclude_org_managed=False,
-                        exclude_not_org_managed=False,
-                        exclude_platform=None,
-                        exclude_org_id=None,
-                        sort_by="asn_org",
-                    )
-
-                assert exc_info.value.code == 1
 
     def test_collect_ips_single_ip(self, lookup_command):
         """Test collecting a single IP address."""

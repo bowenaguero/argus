@@ -9,7 +9,7 @@ from .commands.lookup import LookupCommand
 from .commands.setup import SetupCommand
 from .core.exceptions import ArgusError
 from .utils.logger import get_logger
-from .utils.validators import ParameterValidator, ValidationError
+from .utils.validators import ParameterValidator
 
 console = Console()
 logger = get_logger(console)
@@ -27,7 +27,7 @@ def setup():
     try:
         setup_cmd = SetupCommand(console)
         setup_cmd.execute()
-    except (ValidationError, ArgusError) as e:
+    except ArgusError as e:
         logger.exception("Error during setup")
         raise typer.Exit(1) from e
     except Exception as e:
@@ -53,7 +53,7 @@ def lookup(
         typer.Option(
             "-xc",
             "--exclude-country",
-            help="Exclude IPs from country (ISO code, e.g., US, CN)",
+            help="Exclude IPs from country (e.g., Germany, China)",
         ),
     ] = None,
     exclude_city: Annotated[
@@ -135,7 +135,7 @@ def lookup(
             ParameterValidator.validate_asn_numbers(exclude_asn)
 
         if exclude_country:
-            ParameterValidator.validate_country_codes(exclude_country)
+            ParameterValidator.validate_country_names(exclude_country)
 
         # Execute lookup
         lookup_cmd = LookupCommand(console)
@@ -155,7 +155,7 @@ def lookup(
             sort_by=sort_by,
         )
 
-    except (ValidationError, ArgusError):
+    except ArgusError:
         logger.exception("Error during lookup")
         raise typer.Exit(code=1) from None
     except Exception:

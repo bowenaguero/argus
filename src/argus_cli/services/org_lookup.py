@@ -6,10 +6,16 @@ from pathlib import Path
 class OrgLookup:
     def __init__(self, org_db_dir: str):
         self.org_db_dir = Path(org_db_dir)
-        self.connections = []
+        self.connections: list[dict] = []
         self.has_org_dbs = False
+        self._loaded = False
 
     def load_databases(self) -> bool:
+        if self._loaded:
+            return self.has_org_dbs
+
+        self._loaded = True
+
         if not self.org_db_dir.exists():
             return False
 
@@ -17,7 +23,6 @@ class OrgLookup:
         if not db_files:
             return False
 
-        self.has_org_dbs = True
         loaded_count = 0
 
         for db_file in db_files:
@@ -32,7 +37,8 @@ class OrgLookup:
             except Exception:
                 continue
 
-        return loaded_count > 0
+        self.has_org_dbs = loaded_count > 0
+        return self.has_org_dbs
 
     def lookup_ip(self, ip: str) -> dict | None:
         if not self.connections:
@@ -64,6 +70,8 @@ class OrgLookup:
             with suppress(Exception):
                 db["conn"].close()
         self.connections = []
+        self.has_org_dbs = False
+        self._loaded = False
 
     def __del__(self):
         self.close()

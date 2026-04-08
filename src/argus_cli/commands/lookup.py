@@ -5,13 +5,11 @@ import typer
 from rich.console import Console
 
 from ..core.config import Config
-from ..core.exceptions import ValidationError
 from ..services.database import DatabaseManager
 from ..services.lookup import GeoIPLookup
 from ..utils.filters import ResultFilter
 from ..utils.formatter import ResultFormatter
 from ..utils.parser import FileParser
-from ..utils.validators import ParameterValidator
 
 
 class LookupCommand:
@@ -47,13 +45,6 @@ class LookupCommand:
 
         if output == "-":
             output = ""
-
-        if ip:
-            try:
-                ParameterValidator.validate_ip(ip)
-            except ValidationError as e:
-                self.console.print(f"[red]✗ Error:[/red] {e}", style="bold")
-                raise typer.Exit(1) from e
 
         start_time = time.time()
 

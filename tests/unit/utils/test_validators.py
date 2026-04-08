@@ -67,20 +67,20 @@ class TestParameterValidator:
             with pytest.raises(ValidationError, match="Invalid ASN number"):
                 ParameterValidator.validate_asn_numbers([asn])
 
-    def test_validate_country_codes_valid(self):
-        """Test validation of valid country codes."""
-        valid_countries = ["US", "CN", "AU", "DE", "br"]
+    def test_validate_country_names_valid(self):
+        """Test validation of valid country names."""
+        valid_countries = ["Germany", "United States", "china", "Brazil"]
 
-        result = ParameterValidator.validate_country_codes(valid_countries)
-        assert result == ["US", "CN", "AU", "DE", "BR"]  # Should be uppercase
+        result = ParameterValidator.validate_country_names(valid_countries)
+        assert result == ["GERMANY", "UNITED STATES", "CHINA", "BRAZIL"]
 
-    def test_validate_country_codes_invalid(self):
-        """Test validation of invalid country codes."""
-        invalid_countries = ["USA", "123", "A", "VERYLONGCODE"]
+    def test_validate_country_names_invalid(self):
+        """Test validation of invalid country names."""
+        invalid_countries = ["", "123", "US-1"]
 
         for country in invalid_countries:
-            with pytest.raises(ValidationError, match="Invalid country code"):
-                ParameterValidator.validate_country_codes([country])
+            with pytest.raises(ValidationError, match="Invalid country name"):
+                ParameterValidator.validate_country_names([country])
 
     def test_validate_sort_by_valid(self):
         """Test validation of valid sort fields."""

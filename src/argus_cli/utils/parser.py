@@ -1,10 +1,11 @@
 import ipaddress
 import re
-import sys
 from pathlib import Path
 
 import openpyxl
 import pypdf
+
+from ..core.exceptions import FileOperationError
 
 
 class FileParser:
@@ -36,9 +37,6 @@ class FileParser:
 
     @staticmethod
     def read_pdf(filepath: str) -> str:
-        if not pypdf:
-            print("Error: pypdf not installed. Run: pip install pypdf", file=sys.stderr)
-            sys.exit(1)
         try:
             with open(filepath, "rb") as f:
                 reader = pypdf.PdfReader(f)
@@ -46,19 +44,12 @@ class FileParser:
                 for page in reader.pages:
                     text += page.extract_text() + "\n"
         except Exception as e:
-            print(f"Error reading PDF: {e}", file=sys.stderr)
-            sys.exit(1)
+            raise FileOperationError(f"Error reading PDF: {e}") from e  # noqa: TRY003
         else:
             return text
 
     @staticmethod
     def read_excel(filepath: str) -> str:
-        if not openpyxl:
-            print(
-                "Error: openpyxl not installed. Run: pip install openpyxl",
-                file=sys.stderr,
-            )
-            sys.exit(1)
         try:
             wb = openpyxl.load_workbook(filepath, data_only=True)
             text = ""
@@ -69,8 +60,7 @@ class FileParser:
                             text += str(cell) + " "
                     text += "\n"
         except Exception as e:
-            print(f"Error reading Excel file: {e}", file=sys.stderr)
-            sys.exit(1)
+            raise FileOperationError(f"Error reading Excel file: {e}") from e  # noqa: TRY003
         else:
             return text
 
@@ -84,8 +74,7 @@ class FileParser:
             return cls.read_excel(filepath)
         else:
             try:
-                with open(filepath) as f:
+                with open(filepath, encoding="utf-8") as f:
                     return f.read()
             except Exception as e:
-                print(f"Error reading file: {e}", file=sys.stderr)
-                sys.exit(1)
+                raise FileOperationError(f"Error reading file: {e}") from e  # noqa: TRY003
