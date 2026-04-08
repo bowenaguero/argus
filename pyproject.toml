@@ -55,9 +55,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/argus_cli"]
 
-[tool.uv]
-index-url = "https://pypi.org/simple"
-
 [tool.ty.environment]
 python = "./.venv"
 python-version = "3.10"
