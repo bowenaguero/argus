@@ -59,8 +59,8 @@ project/
 └── scripts/
 ```
 
-# 4. README & Documentation Standards
-Follow the this pattern for all project documentation:
+# README & Documentation Standards
+Follow this pattern for all project documentation:
 - **Visuals First**: Start with a GIF/Image demonstrating the tool.
 - **The Flow**:
     1. **Prereqs**: Minimal list (e.g., install `uv`, API keys).
@@ -68,3 +68,29 @@ Follow the this pattern for all project documentation:
     3. **Setup**: Necessary configuration steps.
     4. **Usage**: Real-world CLI/API examples with code blocks.
     5. **Options**: Visual screenshot of help output or a concise table.
+
+# Commit Messages
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) to drive automated releases and changelog generation. Using the format is recommended but not required — commits that don't follow it are merged normally but won't appear in release notes or trigger version bumps.
+
+Format: `type(scope): description`
+
+| Type | When to use |
+|---|---|
+| `feat` | A new feature (triggers a version bump) |
+| `fix` | A bug fix (triggers a version bump) |
+| `perf` | A performance improvement |
+| `refactor` | Code restructuring with no behavior change |
+| `docs` | Documentation only changes |
+| `ci` | CI/CD configuration changes |
+| `chore` | Maintenance tasks, dependency updates |
+
+Breaking changes: append `!` after the type (e.g., `feat!: remove legacy flag`) or add `BREAKING CHANGE:` in the commit body.
+
+Examples:
+```
+feat: add bulk IP lookup command
+fix: handle empty rows in CSV import
+docs: update install instructions for uv
+ci: pin release-please action to v4
+chore: bump geoip2 to 4.9.0
+```
