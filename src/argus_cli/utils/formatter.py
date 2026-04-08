@@ -1,11 +1,14 @@
+import csv
+import io
 import json
-import sys
 from datetime import datetime
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+
+from ..core.exceptions import FileOperationError
 
 
 class ResultFormatter:
@@ -19,7 +22,7 @@ class ResultFormatter:
         return self._format_panel(results[0]) if len(results) == 1 else self._format_grouped_table(results)
 
     def _format_panel(self, result: dict) -> Panel:
-        if result["error"]:
+        if result.get("error"):
             content = Text(f"ERROR: {result['error']}", style="bold red")
             return Panel(content, title=f"[cyan]{result['ip']}[/cyan]", border_style="red")
 
@@ -71,7 +74,7 @@ class ResultFormatter:
         table.add_column("Location", style="yellow")
 
         for r in results:
-            if r["error"]:
+            if r.get("error"):
                 table.add_row(r["ip"], "", "", f"[red]ERROR: {r['error']}[/red]", "")
             else:
                 table.add_row(
@@ -133,27 +136,23 @@ class ResultFormatter:
             "region",
             "country",
             "iso_code",
+            "postal",
             "isp",
-            "domain_name",
             "usage_type",
             "asn",
             "asn_org",
             "error",
         ]
 
-        output_str = []
-        output_str.append(",".join(fieldnames))
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+        writer.writerow(fieldnames)
 
         for result in results:
-            row = []
-            for field in fieldnames:
-                value = result.get(field, "")
-                if value is None:
-                    value = ""
-                row.append(str(value))
-            output_str.append(",".join(f'"{v}"' for v in row))
+            row = [str(result.get(field, "") or "") for field in fieldnames]
+            writer.writerow(row)
 
-        return "\n".join(output_str)
+        return output.getvalue().rstrip("\r\n")
 
     def write_to_file(self, results: list[dict], output_file: str | None, file_format: str = "json") -> None:
         file_path: str
@@ -174,18 +173,4 @@ class ResultFormatter:
 
             self.console.print(f"[green]✓[/green] Results written to [cyan]{file_path}[/cyan]")
         except Exception as e:
-            self.console.print(f"[red]✗ Error writing to file:[/red] {e}")
-            sys.exit(1)
-
-    def output_results(
-        self,
-        results: list[dict],
-        json_output: bool = False,
-        output_file: str | None = None,
-    ) -> None:
-        if output_file is not None:
-            self.write_to_file(results, output_file)
-        elif json_output:
-            print(self.format_json(results))
-        else:
-            self.console.print(self.format_table(results))
+            raise FileOperationError(f"Error writing to file: {e}") from e  # noqa: TRY003

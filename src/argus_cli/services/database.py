@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-import sys
 import tarfile
 import zipfile
 from datetime import datetime, timedelta
@@ -17,6 +16,8 @@ from rich.progress import (
     TextColumn,
     TransferSpeedColumn,
 )
+
+from ..core.exceptions import ConfigurationError, DatabaseError
 
 IP2PROXY_DB_CODE = "PX11LITEBIN"
 
@@ -115,8 +116,8 @@ class DatabaseManager:
 
                 content_type = r.headers.get("content-type", "")
                 if "text" in content_type.lower() or "html" in content_type.lower():
-                    print(r.text)
-                    msg = "Invalid token or download limit exceeded. Please check your IP2Proxy account."
+                    self.console.print(f"[dim]{r.text}[/dim]")
+                    msg = f"Invalid token or download limit exceeded for {description}. Please check your account."
                     raise requests.exceptions.HTTPError(msg)
 
                 total_size = int(r.headers.get("content-length", 0))
@@ -128,18 +129,22 @@ class DatabaseManager:
                         progress.update(task, advance=len(chunk))
 
     def _extract_maxmind_database(self, temp_file: str, db_path: str) -> None:
+        extract_dir = str(self.config.data_dir)
         with tarfile.open(temp_file, "r:gz") as tar:
             mmdb_member = next((m for m in tar.getmembers() if m.name.endswith(".mmdb")), None)
             if not mmdb_member:
                 msg = "Could not find .mmdb file in archive."
                 raise ValueError(msg)
 
-            tar.extract(mmdb_member)
-            shutil.move(mmdb_member.name, db_path)
+            tar.extract(mmdb_member, path=extract_dir)
+            extracted_path = os.path.join(extract_dir, mmdb_member.name)
+            shutil.move(extracted_path, db_path)
 
-            extracted_dir = os.path.dirname(mmdb_member.name)
-            if extracted_dir and os.path.exists(extracted_dir):
-                shutil.rmtree(extracted_dir)
+            extracted_dir_name = os.path.dirname(mmdb_member.name)
+            if extracted_dir_name:
+                full_extracted_dir = os.path.join(extract_dir, extracted_dir_name)
+                if os.path.exists(full_extracted_dir):
+                    shutil.rmtree(full_extracted_dir)
 
         os.remove(temp_file)
 
@@ -165,7 +170,7 @@ class DatabaseManager:
         maxmind_key = self.config.get_license_key("maxmind_license_key")
         if not maxmind_key and not (os.path.exists(self.config.db_city) and os.path.exists(self.config.db_asn)):
             self.display_missing_license_key_help()
-            sys.exit(1)
+            raise ConfigurationError("MaxMind license key not configured and no existing databases found")  # noqa: TRY003
 
         if maxmind_key:
             city_ok = self.download_maxmind_database(maxmind_key, "GeoLite2-City", self.config.db_city)
@@ -174,7 +179,7 @@ class DatabaseManager:
             if (not city_ok and not os.path.exists(self.config.db_city)) or (
                 not asn_ok and not os.path.exists(self.config.db_asn)
             ):
-                sys.exit(1)
+                raise DatabaseError("Required MaxMind databases are unavailable")  # noqa: TRY003
 
         ip2proxy_token = self.config.get_license_key("ip2proxy_token")
         if ip2proxy_token:
@@ -185,7 +190,7 @@ class DatabaseManager:
             )
 
         org_dir = os.path.join(self.config.data_dir, "org")
-        if not os.path.exists(org_dir) or not any(Path(org_dir).glob("*.bin")):
+        if not os.path.exists(org_dir) or not any(Path(org_dir).glob("*.db")):
             self.console.print(
                 "[yellow]i[/yellow] Org databases not found. Org managed IP detection will be unavailable."
             )

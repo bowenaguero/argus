@@ -2,9 +2,7 @@ import os
 import re
 from pathlib import Path
 
-
-class ValidationError(Exception):
-    """Raised when parameter validation fails."""
+from ..core.exceptions import ValidationError
 
 
 class ParameterValidator:
@@ -80,11 +78,11 @@ class ParameterValidator:
         return asn_list
 
     @staticmethod
-    def validate_country_codes(country_list: list[str]) -> list[str]:
-        """Validate ISO country codes."""
+    def validate_country_names(country_list: list[str]) -> list[str]:
+        """Validate country names are non-empty alphabetic strings."""
         for country in country_list:
-            if not (len(country) == 2 and country.isalpha()):
-                raise ValidationError(f"Invalid country code: {country}. Must be 2-letter ISO code")  # noqa: TRY003
+            if not country or not country.replace(" ", "").isalpha():
+                raise ValidationError(f"Invalid country name: {country}")  # noqa: TRY003
         return [country.upper() for country in country_list]
 
     @staticmethod
