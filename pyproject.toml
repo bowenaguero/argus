@@ -1,5 +1,5 @@
 [project]
-name = "argus-cli"
+name = "argus"
 version = "0.0.2"
 description = "A tool for indicator lookup and enrichment."
 authors = [{ name = "Bowen Aguero", email = "bowenaguero@proton.me" }]
@@ -33,9 +33,9 @@ dependencies = [
 argus = "argus_cli.argus:app"
 
 [project.urls]
-Homepage = "https://bowenaguero.github.io/argus-cli/"
-Repository = "https://github.com/bowenaguero/argus-cli"
-Documentation = "https://bowenaguero.github.io/argus-cli/"
+Homepage = "https://bowenaguero.github.io/argus/"
+Repository = "https://github.com/bowenaguero/argus"
+Documentation = "https://bowenaguero.github.io/argus/"
 
 [dependency-groups]
 dev = [
