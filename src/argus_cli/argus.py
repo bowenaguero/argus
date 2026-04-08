@@ -5,10 +5,13 @@ import click
 import typer
 from rich.console import Console
 
+from . import __version__
 from .commands.lookup import LookupCommand
 from .commands.org import OrgCommand
 from .commands.setup import SetupCommand
+from .core.config import Config
 from .core.exceptions import ArgusError
+from .services.updater import UpdateChecker
 from .utils.logger import get_logger
 from .utils.validators import ParameterValidator
 
@@ -20,6 +23,22 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
 )
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        console.print(f"argus {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: Annotated[
+        bool,
+        typer.Option("--version", callback=_version_callback, is_eager=True, help="Show version and exit"),
+    ] = False,
+) -> None:
+    UpdateChecker(Config(), console).notify_if_update_available()
 
 
 @app.command(help="Initial setup for Argus CLI (run this first)")
