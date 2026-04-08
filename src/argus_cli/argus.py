@@ -6,6 +6,7 @@ import typer
 from rich.console import Console
 
 from .commands.lookup import LookupCommand
+from .commands.org import OrgCommand
 from .commands.setup import SetupCommand
 from .core.exceptions import ArgusError
 from .utils.logger import get_logger
@@ -160,6 +161,57 @@ def lookup(
         raise typer.Exit(code=1) from None
     except Exception:
         logger.exception("Unexpected error during lookup")
+        raise typer.Exit(code=1) from None
+
+
+org_app = typer.Typer(help="Manage org IP databases", no_args_is_help=True)
+app.add_typer(org_app, name="org")
+
+
+@org_app.command(name="import", help="Import IPs from CSV or JSON into an org database")
+def org_import(
+    file: Annotated[Path, typer.Argument(help="CSV or JSON file to import")],
+    name: Annotated[str | None, typer.Option("--name", "-n", help="Database name (default: filename)")] = None,
+    force: Annotated[bool, typer.Option("--force", help="Overwrite existing database")] = False,
+):
+    """Import org IPs from a CSV or JSON file."""
+    try:
+        ParameterValidator.validate_file_path(file)
+        org_cmd = OrgCommand(console)
+        org_cmd.import_db(file, name, force)
+    except ArgusError:
+        logger.exception("Error during org import")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error during org import")
+        raise typer.Exit(code=1) from None
+
+
+@org_app.command(name="list", help="List org databases")
+def org_list():
+    """Show all org databases with row counts."""
+    try:
+        org_cmd = OrgCommand(console)
+        org_cmd.list_dbs()
+    except Exception:
+        logger.exception("Unexpected error listing org databases")
+        raise typer.Exit(code=1) from None
+
+
+@org_app.command(name="remove", help="Remove an org database")
+def org_remove(
+    name: Annotated[str, typer.Argument(help="Name of the org database to remove")],
+    force: Annotated[bool, typer.Option("--force", help="Skip confirmation prompt")] = False,
+):
+    """Remove an org database."""
+    try:
+        org_cmd = OrgCommand(console)
+        org_cmd.remove_db(name, force)
+    except ArgusError:
+        logger.exception("Error removing org database")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error removing org database")
         raise typer.Exit(code=1) from None
 
 

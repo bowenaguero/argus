@@ -38,6 +38,48 @@ argus lookup -f ips.txt -xc Germany -xa 15169
 argus lookup -f ips.txt -o results.json
 ```
 
+## Org Database Management
+
+Import your organization's IP data so lookups automatically tag managed IPs with org info.
+
+### Input Formats
+
+**CSV** (must have `ip`, `org_id`, `platform` columns):
+
+```csv
+ip,org_id,platform
+10.0.0.1,ACME,aws
+10.0.0.2,ACME,azure
+```
+
+**JSON** (array of objects with `ip`, `org_id`, `platform` keys):
+
+```json
+[
+  {"ip": "10.0.0.1", "org_id": "ACME", "platform": "aws"},
+  {"ip": "10.0.0.2", "org_id": "ACME", "platform": "azure"}
+]
+```
+
+### Commands
+
+```bash
+# Import from CSV or JSON (auto-detects by extension)
+argus org import cloud_ips.csv
+
+# Import with a custom database name
+argus org import cloud_ips.json --name my_cloud
+
+# Overwrite an existing database
+argus org import cloud_ips.csv --force
+
+# List all org databases
+argus org list
+
+# Remove an org database
+argus org remove my_cloud
+```
+
 ## Options
 
 ![Argus Help](images/argus_help.png)
