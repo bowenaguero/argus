@@ -48,16 +48,16 @@ Import your organization's IP data so lookups automatically tag managed IPs with
 
 ```csv
 ip,org_id,platform
-10.0.0.1,ACME,aws
-10.0.0.2,ACME,azure
+10.0.0.1,org-identifier-1,aws
+10.0.0.2,org-identifier-2,azure
 ```
 
 **JSON** (array of objects with `ip`, `org_id`, `platform` keys):
 
 ```json
 [
-  {"ip": "10.0.0.1", "org_id": "ACME", "platform": "aws"},
-  {"ip": "10.0.0.2", "org_id": "ACME", "platform": "azure"}
+  {"ip": "10.0.0.1", "org_id": "org-identifier-1", "platform": "aws"},
+  {"ip": "10.0.0.2", "org_id": "org-identifier-2", "platform": "azure"}
 ]
 ```
 
