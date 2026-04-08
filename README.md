@@ -13,7 +13,7 @@ Fast IP lookups using MaxMind GeoIP2 and IP2Proxy databases.
 ## Install
 
 ```bash
-uv tool install git+https://github.com/bowenaguero/argus-cli
+uv tool install git+https://github.com/bowenaguero/argus
 ```
 
 ## Setup
