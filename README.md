@@ -76,6 +76,10 @@ argus org import cloud_ips.csv --force
 # List all org databases
 argus org list
 
+# Export a database to CSV (for sharing)
+argus org export my_cloud
+argus org export my_cloud -o shared_ips.csv
+
 # Remove an org database
 argus org remove my_cloud
 ```

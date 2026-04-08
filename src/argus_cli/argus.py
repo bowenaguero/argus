@@ -198,6 +198,25 @@ def org_list():
         raise typer.Exit(code=1) from None
 
 
+@org_app.command(name="export", help="Export an org database to CSV")
+def org_export(
+    name: Annotated[str, typer.Argument(help="Name of the org database to export")],
+    output: Annotated[
+        Path | None, typer.Option("-o", "--output", help="Output file path (default: <name>.csv)")
+    ] = None,
+):
+    """Export an org database to a CSV file."""
+    try:
+        org_cmd = OrgCommand(console)
+        org_cmd.export_db(name, output)
+    except ArgusError:
+        logger.exception("Error exporting org database")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error exporting org database")
+        raise typer.Exit(code=1) from None
+
+
 @org_app.command(name="remove", help="Remove an org database")
 def org_remove(
     name: Annotated[str, typer.Argument(help="Name of the org database to remove")],

@@ -104,6 +104,64 @@ class TestOrgCommandList:
         assert "No org databases found" in call_str
 
 
+class TestOrgCommandExport:
+    def test_export_to_default_path(self, org_command, org_dir, tmp_path, monkeypatch):
+        _create_org_db(
+            org_dir,
+            "cloud",
+            [
+                ("8.8.8.8", "GOOGLE", "gcp"),
+                ("1.1.1.1", "CF", "cloudflare"),
+            ],
+        )
+        monkeypatch.chdir(tmp_path)
+
+        org_command.export_db("cloud", output=None)
+
+        out_file = tmp_path / "cloud.csv"
+        assert out_file.exists()
+        lines = out_file.read_text().strip().splitlines()
+        assert lines[0] == "ip,org_id,platform"
+        assert len(lines) == 3
+
+    def test_export_to_custom_path(self, org_command, org_dir, tmp_path):
+        _create_org_db(org_dir, "office", [("10.0.0.1", "ACME", "aws")])
+        out_file = tmp_path / "my_export.csv"
+
+        org_command.export_db("office", output=out_file)
+
+        assert out_file.exists()
+        lines = out_file.read_text().strip().splitlines()
+        assert lines[0] == "ip,org_id,platform"
+        assert "10.0.0.1,ACME,aws" in lines[1]
+
+    def test_export_nonexistent_db(self, org_command, org_dir):
+        org_dir.mkdir(parents=True, exist_ok=True)
+
+        with pytest.raises(typer.Exit):
+            org_command.export_db("nonexistent", output=None)
+
+    def test_export_preserves_all_rows(self, org_command, org_dir, tmp_path):
+        rows = [(f"10.0.0.{i}", "ACME", "aws") for i in range(1, 51)]
+        _create_org_db(org_dir, "big", rows)
+        out_file = tmp_path / "big.csv"
+
+        org_command.export_db("big", output=out_file)
+
+        lines = out_file.read_text().strip().splitlines()
+        assert len(lines) == 51  # header + 50 data rows
+
+    def test_export_prints_summary(self, org_command, org_dir, tmp_path):
+        _create_org_db(org_dir, "test", [("8.8.8.8", "GOOGLE", "gcp")])
+        out_file = tmp_path / "out.csv"
+
+        org_command.export_db("test", output=out_file)
+
+        call_str = str(org_command.console.print.call_args_list)
+        assert "Exported" in call_str
+        assert "1 IPs" in call_str
+
+
 class TestOrgCommandRemove:
     def test_remove_nonexistent(self, org_command, org_dir):
         org_dir.mkdir(parents=True, exist_ok=True)

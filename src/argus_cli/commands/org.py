@@ -1,3 +1,5 @@
+import csv
+import io
 import os
 import sqlite3
 from contextlib import suppress
@@ -8,6 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..core.config import Config
+from ..core.exceptions import FileOperationError
 from ..services.org_import import OrgImporter
 
 
@@ -54,6 +57,38 @@ class OrgCommand:
 
         self.console.print(f"\n[bold]Org Databases ({len(db_files)} found):[/bold]")
         self.console.print(table)
+
+    def export_db(self, name: str, output: Path | None) -> None:
+        db_path = Path(self.config.db_org_dir) / f"{name}.db"
+
+        if not db_path.exists():
+            self.console.print(f"[red]✗ Error:[/red] Org database '{name}' not found")
+            raise typer.Exit(1)
+
+        try:
+            conn = sqlite3.connect(str(db_path))
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT ip, org_id, platform FROM data ORDER BY ip").fetchall()
+            conn.close()
+        except Exception as e:
+            raise FileOperationError(f"Error reading database '{name}': {e}") from e  # noqa: TRY003
+
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["ip", "org_id", "platform"])
+        for row in rows:
+            writer.writerow([row["ip"], row["org_id"], row["platform"]])
+        csv_content = buf.getvalue()
+
+        if output is None:
+            output = Path(f"{name}.csv")
+
+        try:
+            output.write_text(csv_content, encoding="utf-8")
+        except Exception as e:
+            raise FileOperationError(f"Error writing to {output}: {e}") from e  # noqa: TRY003
+
+        self.console.print(f"[green]✓[/green] Exported [cyan]{name}[/cyan] ({len(rows):,} IPs) to {output}")
 
     def remove_db(self, name: str, force: bool) -> None:
         db_path = Path(self.config.db_org_dir) / f"{name}.db"
