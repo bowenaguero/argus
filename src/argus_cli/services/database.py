@@ -18,6 +18,9 @@ from rich.progress import (
 )
 
 from ..core.exceptions import ConfigurationError, DatabaseError
+from ..utils.logger import get_logger
+
+logger = get_logger()
 
 IP2PROXY_DB_CODE = "PX11LITEBIN"
 
@@ -47,14 +50,19 @@ class DatabaseManager:
             return True
         try:
             last_dt = datetime.fromisoformat(last_download)
-            return datetime.now() - last_dt > timedelta(hours=24)
+            stale = datetime.now() - last_dt > timedelta(hours=24)
         except Exception:
             return True
+        else:
+            if stale:
+                logger.debug(f"{edition_id} is stale — download required")
+            return stale
 
     def download_maxmind_database(self, license_key: str, edition_id: str, db_path: str) -> bool:
         if not self.needs_download(edition_id):
             return True
 
+        logger.debug(f"Downloading MaxMind {edition_id}")
         url = f"https://download.maxmind.com/app/geoip_download?edition_id={edition_id}&license_key={license_key}&suffix=tar.gz"
         temp_file = str(self.config.data_dir / "temp_maxmind.tar.gz")
 
@@ -78,6 +86,7 @@ class DatabaseManager:
         if not self.needs_download(db_code):
             return True
 
+        logger.debug(f"Downloading IP2Proxy {db_code}")
         url = f"https://www.ip2location.com/download/?token={token}&file={db_code}"
         temp_file = str(self.config.data_dir / "temp_ip2proxy.zip")
 

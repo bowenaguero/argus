@@ -11,6 +11,7 @@ class ArgusLogger:
     def __init__(self, name: str = "argus", console: Console | None = None):
         self.name = name
         self.console = console
+        self._verbose = False
         self.logger = self._setup_logger()
 
     def _setup_logger(self) -> logging.Logger:
@@ -43,6 +44,14 @@ class ArgusLogger:
 
         return logger
 
+    def set_verbose(self) -> None:
+        """Enable verbose (DEBUG) output to the console."""
+        self._verbose = True
+        self.logger.setLevel(logging.DEBUG)
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+                handler.setLevel(logging.DEBUG)
+
     def debug(self, message: str) -> None:
         """Log debug message."""
         self.logger.debug(message)
@@ -74,6 +83,8 @@ class ArgusLogger:
         self.logger.exception(message)
         if self.console:
             self.console.print(f"[red]✗ Exception:[/red] {message}")
+            if self._verbose:
+                self.console.print_exception()
 
 
 # Global logger instance

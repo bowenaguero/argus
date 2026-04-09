@@ -37,7 +37,13 @@ def main(
         bool,
         typer.Option("--version", callback=_version_callback, is_eager=True, help="Show version and exit"),
     ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Enable verbose output for debugging"),
+    ] = False,
 ) -> None:
+    if verbose:
+        logger.set_verbose()
     UpdateChecker(Config(), console).notify_if_update_available()
 
 
