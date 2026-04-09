@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/bowenaguero/argus/compare/argus-v0.0.5...argus-v0.0.6) (2026-04-09)
+
+
+### Features
+
+* add --verbose / -v flag for debug output ([#25](https://github.com/bowenaguero/argus/issues/25)) ([298af1b](https://github.com/bowenaguero/argus/commit/298af1b2b7a7dd115e97a2f8a726a446f8e9e036))
+
 ## [0.0.5](https://github.com/bowenaguero/argus/compare/argus-v0.0.4...argus-v0.0.5) (2026-04-09)
 
 
