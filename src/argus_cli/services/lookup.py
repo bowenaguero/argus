@@ -11,7 +11,10 @@ from rich.progress import (
     TextColumn,
 )
 
+from ..utils.logger import get_logger
 from .org_lookup import OrgLookup
+
+logger = get_logger()
 
 
 class GeoIPLookup:
@@ -24,6 +27,7 @@ class GeoIPLookup:
         self.org_lookup = OrgLookup(org_db_dir)
 
     def lookup_ip(self, city_reader, asn_reader, proxy_db, ip: str) -> dict:
+        logger.debug(f"Looking up IP: {ip}")
         try:
             city_resp = city_reader.city(ip)
             asn_resp = asn_reader.asn(ip)
@@ -70,6 +74,7 @@ class GeoIPLookup:
         return result
 
     def lookup_ips(self, ips: list[str]) -> list[dict]:
+        logger.debug(f"Starting batch lookup for {len(ips)} IP(s)")
         results = []
 
         show_progress = len(ips) > 1

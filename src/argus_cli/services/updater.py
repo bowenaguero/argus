@@ -8,6 +8,9 @@ from rich.console import Console
 
 from .. import __version__
 from ..core.config import Config
+from ..utils.logger import get_logger
+
+logger = get_logger()
 
 GITHUB_RELEASES_URL = "https://api.github.com/repos/bowenaguero/argus/releases/latest"
 STATE_KEY = "update_check"
@@ -41,7 +44,9 @@ class UpdateChecker:
             try:
                 last_dt = datetime.fromisoformat(last_checked)
                 if datetime.now() - last_dt < timedelta(hours=CHECK_INTERVAL_HOURS):
-                    return entry.get("latest_version")
+                    cached = entry.get("latest_version")
+                    logger.debug(f"Using cached version: {cached}")
+                    return cached
             except Exception:  # noqa: S110
                 pass
 
@@ -49,6 +54,7 @@ class UpdateChecker:
 
     def _fetch_and_cache(self) -> str | None:
         """Hit the GitHub Releases API and cache the result."""
+        logger.debug(f"Fetching latest version from {GITHUB_RELEASES_URL}")
         response = requests.get(
             GITHUB_RELEASES_URL,
             headers={"Accept": "application/vnd.github+json"},
