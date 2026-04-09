@@ -81,7 +81,7 @@ class TestGetLatestVersion:
 
 
 class TestFetchAndCache:
-    def test_strips_v_prefix_and_caches(self, checker):
+    def test_simple_v_prefix_tag(self, checker):
         mock_response = MagicMock()
         mock_response.json.return_value = {"tag_name": "v0.0.5"}
 
@@ -89,6 +89,23 @@ class TestFetchAndCache:
             result = checker._fetch_and_cache()
 
         assert result == "0.0.5"
+
+    def test_prefixed_tag_format(self, checker):
+        """Handles tags like 'argus-v0.0.4' produced by release-please."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"tag_name": "argus-v0.0.5"}
+
+        with patch("argus_cli.services.updater.requests.get", return_value=mock_response):
+            result = checker._fetch_and_cache()
+
+        assert result == "0.0.5"
+
+    def test_caches_result(self, checker):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"tag_name": "v0.0.5"}
+
+        with patch("argus_cli.services.updater.requests.get", return_value=mock_response):
+            checker._fetch_and_cache()
 
         with open(checker.config.state_file) as f:
             state = json.load(f)

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from datetime import datetime, timedelta
 
 import requests
@@ -55,7 +56,8 @@ class UpdateChecker:
         )
         response.raise_for_status()
         tag = response.json().get("tag_name", "")
-        latest = tag.lstrip("v")
+        match = re.search(r"(\d+\.\d+\.\d+)", tag)
+        latest = match.group(1) if match else ""
 
         state = self._load_state()
         state[STATE_KEY] = {
