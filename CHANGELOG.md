@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/bowenaguero/argus/compare/argus-v0.0.4...argus-v0.0.5) (2026-04-09)
+
+
+### Bug Fixes
+
+* parse version from release tag regardless of prefix format ([#23](https://github.com/bowenaguero/argus/issues/23)) ([a81fbfd](https://github.com/bowenaguero/argus/commit/a81fbfd80d4f11fca7ddc7a9b3266bf0dbce4e60))
+
 ## [0.0.4](https://github.com/bowenaguero/argus/compare/argus-v0.0.3...argus-v0.0.4) (2026-04-08)
 
 
