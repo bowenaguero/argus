@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7](https://github.com/bowenaguero/argus/compare/argus-v0.0.6...argus-v0.0.7) (2026-04-09)
+
+
+### Documentation
+
+* add git workflow guidelines for agents ([#28](https://github.com/bowenaguero/argus/issues/28)) ([61d7c7c](https://github.com/bowenaguero/argus/commit/61d7c7c520e9f5205aef2535f38d21e0dcaea9ee))
+
 ## [0.0.6](https://github.com/bowenaguero/argus/compare/argus-v0.0.5...argus-v0.0.6) (2026-04-09)
 
 
