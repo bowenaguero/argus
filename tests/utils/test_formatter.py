@@ -340,8 +340,24 @@ class TestResultFormatter:
         formatter = ResultFormatter(console)
         caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=True)
         results = [
-            {"ip": "1.1.1.1", "domain": "cloudflare.com", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
-            {"ip": "8.8.8.8", "domain": "google.com", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
+            {
+                "ip": "1.1.1.1",
+                "domain": "cloudflare.com",
+                "city": "Austin",
+                "country": "US",
+                "asn": 13335,
+                "asn_org": "Cloudflare",
+                "error": None,
+            },
+            {
+                "ip": "8.8.8.8",
+                "domain": "google.com",
+                "city": "MV",
+                "country": "US",
+                "asn": 15169,
+                "asn_org": "Google",
+                "error": None,
+            },
         ]
         table = formatter.format_table(results, caps)
         column_headers = [col.header for col in table.columns]
