@@ -47,13 +47,14 @@ class TestDownloadIpinfoDatabase:
     @patch("argus_cli.services.database.DatabaseManager._update_state")
     @patch("argus_cli.services.database.DatabaseManager._download_file")
     @patch("argus_cli.services.database.DatabaseManager.needs_download")
-    def test_download_ipinfo_database_success(self, mock_needs, mock_dl, mock_state, mock_move):
+    def test_download_ipinfo_database_success(self, mock_needs, mock_dl, mock_state, mock_move, tmp_path):
         mock_needs.return_value = True
         config = Config()
         console = MagicMock(spec=Console)
         db_manager = DatabaseManager(config, console)
+        db_path = tmp_path / "ipinfo_lite.mmdb"
 
-        result = db_manager.download_ipinfo_database("test_token", "/tmp/ipinfo_lite.mmdb")
+        result = db_manager.download_ipinfo_database("test_token", str(db_path))
 
         assert result is True
         mock_dl.assert_called_once()
@@ -61,12 +62,13 @@ class TestDownloadIpinfoDatabase:
         mock_state.assert_called_once_with("ipinfo_lite")
 
     @patch("argus_cli.services.database.DatabaseManager.needs_download")
-    def test_download_ipinfo_database_skips_when_fresh(self, mock_needs):
+    def test_download_ipinfo_database_skips_when_fresh(self, mock_needs, tmp_path):
         mock_needs.return_value = False
         config = Config()
         console = MagicMock(spec=Console)
         db_manager = DatabaseManager(config, console)
+        db_path = tmp_path / "ipinfo_lite.mmdb"
 
-        result = db_manager.download_ipinfo_database("test_token", "/tmp/ipinfo_lite.mmdb")
+        result = db_manager.download_ipinfo_database("test_token", str(db_path))
 
         assert result is True

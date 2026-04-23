@@ -4,8 +4,15 @@ import os
 import tempfile
 from unittest.mock import MagicMock
 
+from rich.table import Table
+
 from argus_cli.services.lookup import DataSourceCapabilities
 from argus_cli.utils.formatter import ResultFormatter
+
+
+def assert_is_table(value: Table | object) -> Table:
+    assert isinstance(value, Table)
+    return value
 
 
 class TestResultFormatter:
@@ -223,7 +230,7 @@ class TestResultFormatter:
             {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
             {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
         ]
-        table = formatter.format_table(results, caps)
+        table = assert_is_table(formatter.format_table(results, caps))
         column_headers = [col.header for col in table.columns]
         assert "Org Info" not in column_headers
         assert "Proxy" in column_headers
@@ -257,7 +264,7 @@ class TestResultFormatter:
                 "error": None,
             },
         ]
-        table = formatter.format_table(results, caps)
+        table = assert_is_table(formatter.format_table(results, caps))
         column_headers = [col.header for col in table.columns]
         assert "Proxy" not in column_headers
         assert "Org Info" in column_headers
@@ -271,7 +278,7 @@ class TestResultFormatter:
             {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
             {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
         ]
-        table = formatter.format_table(results, caps)
+        table = assert_is_table(formatter.format_table(results, caps))
         column_headers = [col.header for col in table.columns]
         assert "Org Info" not in column_headers
         assert "Proxy" not in column_headers
@@ -285,7 +292,7 @@ class TestResultFormatter:
             {"ip": "1.2.3.4", "error": "IP not found in database"},
             {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
         ]
-        table = formatter.format_table(results, caps)
+        table = assert_is_table(formatter.format_table(results, caps))
         assert len(table.columns) == 3
         assert table.row_count == 2
 
@@ -296,7 +303,7 @@ class TestResultFormatter:
             {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
             {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
         ]
-        table = formatter.format_table(results)
+        table = assert_is_table(formatter.format_table(results))
         assert len(table.columns) == 6
 
     def test_format_csv_excludes_org_fields(self):
@@ -359,7 +366,7 @@ class TestResultFormatter:
                 "error": None,
             },
         ]
-        table = formatter.format_table(results, caps)
+        table = assert_is_table(formatter.format_table(results, caps))
         column_headers = [col.header for col in table.columns]
         assert "Domain" in column_headers
         assert len(table.columns) == 4  # IP + Domain + Network + Location
@@ -372,7 +379,7 @@ class TestResultFormatter:
             {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
             {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
         ]
-        table = formatter.format_table(results, caps)
+        table = assert_is_table(formatter.format_table(results, caps))
         column_headers = [col.header for col in table.columns]
         assert "Domain" not in column_headers
         assert len(table.columns) == 3  # IP + Network + Location
