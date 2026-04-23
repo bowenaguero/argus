@@ -25,7 +25,9 @@ class ResultFormatter:
         return json.dumps(results, indent=2)
 
     def format_table(self, results: list[dict], capabilities: DataSourceCapabilities | None = None) -> Table | Panel:
-        return self._format_panel(results[0]) if len(results) == 1 else self._format_grouped_table(results, capabilities)
+        return (
+            self._format_panel(results[0]) if len(results) == 1 else self._format_grouped_table(results, capabilities)
+        )
 
     def _format_panel(self, result: dict) -> Panel:
         if result.get("error"):
@@ -169,8 +171,13 @@ class ResultFormatter:
 
         return output.getvalue().rstrip("\r\n")
 
-    def write_to_file(self, results: list[dict], output_file: str | None, file_format: str = "json",
-                      capabilities: DataSourceCapabilities | None = None) -> None:
+    def write_to_file(
+        self,
+        results: list[dict],
+        output_file: str | None,
+        file_format: str = "json",
+        capabilities: DataSourceCapabilities | None = None,
+    ) -> None:
         file_path: str
         if output_file == "":
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

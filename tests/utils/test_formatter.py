@@ -235,12 +235,26 @@ class TestResultFormatter:
         caps = DataSourceCapabilities(has_proxy=False, has_org=True)
         results = [
             {
-                "ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare",
-                "org_managed": False, "org_id": None, "platform": None, "error": None,
+                "ip": "1.1.1.1",
+                "city": "Austin",
+                "country": "US",
+                "asn": 13335,
+                "asn_org": "Cloudflare",
+                "org_managed": False,
+                "org_id": None,
+                "platform": None,
+                "error": None,
             },
             {
-                "ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google",
-                "org_managed": True, "org_id": "GOOG", "platform": "gcp", "error": None,
+                "ip": "8.8.8.8",
+                "city": "MV",
+                "country": "US",
+                "asn": 15169,
+                "asn_org": "Google",
+                "org_managed": True,
+                "org_id": "GOOG",
+                "platform": "gcp",
+                "error": None,
             },
         ]
         table = formatter.format_table(results, caps)
