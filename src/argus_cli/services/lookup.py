@@ -27,7 +27,9 @@ class DataSourceCapabilities:
 
 
 class GeoIPLookup:
-    def __init__(self, city_db_path: str, asn_db_path: str, proxy_db_path: str, org_db_dir: str, ipinfo_db_path: str = ""):
+    def __init__(
+        self, city_db_path: str, asn_db_path: str, proxy_db_path: str, org_db_dir: str, ipinfo_db_path: str = ""
+    ):
         self.city_db_path = city_db_path
         self.asn_db_path = asn_db_path
         self.proxy_db_path = proxy_db_path
