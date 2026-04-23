@@ -1,6 +1,6 @@
 [project]
 name = "argus"
-version = "0.0.8"
+version = "0.0.9"
 description = "A tool for indicator lookup and enrichment."
 authors = [{ name = "Bowen Aguero", email = "bowenaguero@proton.me" }]
 readme = "README.md"
