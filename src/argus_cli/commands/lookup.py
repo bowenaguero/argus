@@ -55,7 +55,7 @@ class LookupCommand:
             return None
 
         try:
-            results = self.lookup_service.lookup_ips(ips)
+            results, capabilities = self.lookup_service.lookup_ips(ips)
         except Exception as e:
             self.console.print(f"[red]✗ Error:[/red] {e}", style="bold")
             raise typer.Exit(1) from e
@@ -74,10 +74,10 @@ class LookupCommand:
 
         sorted_results = self._sort_results(filtered_results, sort_by)
 
-        self.console.print(self.formatter.format_table(sorted_results))
+        self.console.print(self.formatter.format_table(sorted_results, capabilities))
 
         if output is not None:
-            self.formatter.write_to_file(sorted_results, output, output_format)
+            self.formatter.write_to_file(sorted_results, output, output_format, capabilities)
 
         elapsed_time = time.time() - start_time
         self.console.print(f"\n[dim]Processed {len(ips)} IP(s) in {elapsed_time:.2f}s[/dim]")
