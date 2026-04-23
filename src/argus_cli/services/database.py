@@ -23,6 +23,7 @@ from ..utils.logger import get_logger
 logger = get_logger()
 
 IP2PROXY_DB_CODE = "PX11LITEBIN"
+IPINFO_EDITION_ID = "ipinfo_lite"
 
 
 class DatabaseManager:
@@ -104,6 +105,30 @@ class DatabaseManager:
             return False
         else:
             self.console.print(f"[green]✓[/green] IP2Proxy {db_code} database downloaded successfully")
+            return True
+
+    def download_ipinfo_database(self, token: str, db_path: str) -> bool:
+        if not self.needs_download(IPINFO_EDITION_ID):
+            return True
+
+        logger.debug("Downloading IPinfo Lite database")
+        url = f"https://ipinfo.io/data/ipinfo_lite.mmdb?token={token}"
+        temp_file = str(self.config.data_dir / "temp_ipinfo.mmdb")
+
+        try:
+            self._download_file(url, temp_file, "IPinfo Lite")
+            shutil.move(temp_file, db_path)
+            self._update_state(IPINFO_EDITION_ID)
+        except Exception as e:
+            self.console.print(f"[red]✗ Error:[/red] {e}", style="bold")
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+            if os.path.exists(db_path):
+                self.console.print("[yellow]Continuing with existing database...[/yellow]")
+                return True
+            return False
+        else:
+            self.console.print("[green]✓[/green] IPinfo Lite database downloaded successfully")
             return True
 
     def _download_file(self, url: str, temp_file: str, description: str) -> None:
@@ -196,6 +221,14 @@ class DatabaseManager:
         elif not os.path.exists(self.config.db_proxy):
             self.console.print(
                 "[yellow]i[/yellow] IP2Proxy database not configured. Proxy detection will be unavailable."
+            )
+
+        ipinfo_token = self.config.get_license_key("ipinfo_token")
+        if ipinfo_token:
+            self.download_ipinfo_database(ipinfo_token, self.config.db_ipinfo)
+        elif not os.path.exists(self.config.db_ipinfo):
+            self.console.print(
+                "[yellow]i[/yellow] IPinfo database not configured. Domain enrichment will be unavailable."
             )
 
         org_dir = os.path.join(self.config.data_dir, "org")

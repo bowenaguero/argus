@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
     "geoip2>=4.8.0",
     "IP2Proxy>=3.2.4",
+    "maxminddb>=2.6.0",
     "openpyxl>=3.1.0",
     "requests>=2.31.0",
     "rich>=13.0.0",

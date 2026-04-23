@@ -154,7 +154,8 @@ class ResultFormatter:
             fieldnames.extend(["org_managed", "org_id", "platform"])
         if show_proxy:
             fieldnames.append("proxy_type")
-        if show_proxy:
+        show_domain = capabilities is None or capabilities.has_ipinfo
+        if show_domain:
             fieldnames.append("domain")
         fieldnames.extend(["city", "region", "country", "iso_code", "postal"])
         if show_proxy:

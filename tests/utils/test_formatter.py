@@ -334,3 +334,22 @@ class TestResultFormatter:
         assert "proxy_type" in header
         assert "domain" in header
         assert "isp" in header
+
+    def test_format_csv_shows_domain_with_ipinfo_only(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=True)
+        results = [{"ip": "1.1.1.1", "domain": "cloudflare.com", "error": None}]
+        csv_output = formatter.format_csv(results, caps)
+        header = csv_output.split("\r\n")[0]
+        assert "domain" in header
+        assert "proxy_type" not in header
+
+    def test_format_csv_hides_domain_without_proxy_or_ipinfo(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=False)
+        results = [{"ip": "1.1.1.1", "error": None}]
+        csv_output = formatter.format_csv(results, caps)
+        header = csv_output.split("\r\n")[0]
+        assert "domain" not in header

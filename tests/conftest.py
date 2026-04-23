@@ -27,7 +27,11 @@ def temp_config_dir():
 @pytest.fixture
 def sample_config_data():
     """Sample configuration data for testing."""
-    return {"maxmind_license_key": "test_maxmind_key_12345", "ip2proxy_token": "test_ip2proxy_token_67890"}
+    return {
+        "maxmind_license_key": "test_maxmind_key_12345",
+        "ip2proxy_token": "test_ip2proxy_token_67890",
+        "ipinfo_token": "test_ipinfo_token_24680",
+    }
 
 
 @pytest.fixture
@@ -204,11 +208,13 @@ class TestDataFactory:
     def create_config_data(
         maxmind_key: str = "test_key",
         ip2proxy_token: str = "test_token",  # noqa: S107
+        ipinfo_token: str = "test_ipinfo_token",  # noqa: S107
     ) -> dict[str, str]:
         """Create configuration data."""
         return {
             "maxmind_license_key": maxmind_key,
             "ip2proxy_token": ip2proxy_token,
+            "ipinfo_token": ipinfo_token,
         }
 
 
