@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.9](https://github.com/bowenaguero/argus/compare/argus-v0.0.8...argus-v0.0.9) (2026-04-23)
+
+
+### Features
+
+* add IPinfo Lite as a data source for domain enrichment ([#33](https://github.com/bowenaguero/argus/issues/33)) ([f1b4a0c](https://github.com/bowenaguero/argus/commit/f1b4a0c88a71d3a3f0a930099c5025c5e516dc5a))
+
 ## [0.0.8](https://github.com/bowenaguero/argus/compare/argus-v0.0.7...argus-v0.0.8) (2026-04-23)
 
 
