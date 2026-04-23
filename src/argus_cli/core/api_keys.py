@@ -13,4 +13,11 @@ API_KEYS = [
         "info": "Get your IP2Proxy download token (register for free):",
         "link": "https://www.ip2location.com/register",
     },
+    {
+        "key": "ipinfo_token",
+        "name": "IPinfo",
+        "prompt": "Enter your IPinfo access token",
+        "info": "Get your free IPinfo access token (no credit card required):",
+        "link": "https://ipinfo.io/signup",
+    },
 ]

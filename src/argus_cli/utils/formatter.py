@@ -76,6 +76,7 @@ class ResultFormatter:
     def _format_grouped_table(self, results: list[dict], capabilities: DataSourceCapabilities | None = None) -> Table:
         show_org = capabilities is None or capabilities.has_org
         show_proxy = capabilities is None or capabilities.has_proxy
+        show_domain = capabilities is None or capabilities.has_ipinfo
 
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("IP", style="cyan", no_wrap=True)
@@ -83,30 +84,39 @@ class ResultFormatter:
             table.add_column("Org Info", style="bright_green")
         if show_proxy:
             table.add_column("Proxy", style="red")
+        if show_domain:
+            table.add_column("Domain", style="bright_cyan")
         table.add_column("Network", style="bright_cyan")
         table.add_column("Location", style="yellow")
 
         for r in results:
-            if r.get("error"):
-                row = [r["ip"]]
-                if show_org:
-                    row.append("")
-                if show_proxy:
-                    row.append("")
-                row.append(f"[red]ERROR: {r['error']}[/red]")
-                row.append("")
-                table.add_row(*row)
-            else:
-                row = [r["ip"]]
-                if show_org:
-                    row.append(self._format_org_cell(r))
-                if show_proxy:
-                    row.append(self._format_proxy_cell(r))
-                row.append(self._format_network_cell(r))
-                row.append(self._format_location_cell(r))
-                table.add_row(*row)
+            table.add_row(*self._build_table_row(r, show_org, show_proxy, show_domain))
 
         return table
+
+    def _build_table_row(self, r: dict, show_org: bool, show_proxy: bool, show_domain: bool) -> list[str]:
+        if r.get("error"):
+            row = [r["ip"]]
+            if show_org:
+                row.append("")
+            if show_proxy:
+                row.append("")
+            if show_domain:
+                row.append("")
+            row.append(f"[red]ERROR: {r['error']}[/red]")
+            row.append("")
+            return row
+
+        row = [r["ip"]]
+        if show_org:
+            row.append(self._format_org_cell(r))
+        if show_proxy:
+            row.append(self._format_proxy_cell(r))
+        if show_domain:
+            row.append(r.get("domain") or "-")
+        row.append(self._format_network_cell(r))
+        row.append(self._format_location_cell(r))
+        return row
 
     def _format_org_cell(self, result: dict) -> str:
         if not result.get("org_managed"):
@@ -128,15 +138,12 @@ class ResultFormatter:
         return " ".join(parts) if parts else "-"
 
     def _format_network_cell(self, result: dict) -> str:
-        parts = []
-        if result.get("domain"):
-            parts.append(result["domain"])
         if result.get("asn"):
             asn_str = f"AS{result['asn']}"
             if result.get("asn_org"):
                 asn_str += f" ({result['asn_org']})"
-            parts.append(asn_str)
-        return "\n".join(parts) if parts else "-"
+            return asn_str
+        return "-"
 
     def _format_location_cell(self, result: dict) -> str:
         location_parts = [p for p in [result.get("city"), result.get("country")] if p]
@@ -154,7 +161,8 @@ class ResultFormatter:
             fieldnames.extend(["org_managed", "org_id", "platform"])
         if show_proxy:
             fieldnames.append("proxy_type")
-        if show_proxy:
+        show_domain = capabilities is None or capabilities.has_ipinfo
+        if show_domain:
             fieldnames.append("domain")
         fieldnames.extend(["city", "region", "country", "iso_code", "postal"])
         if show_proxy:

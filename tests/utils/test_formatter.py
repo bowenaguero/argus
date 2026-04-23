@@ -297,7 +297,7 @@ class TestResultFormatter:
             {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
         ]
         table = formatter.format_table(results)
-        assert len(table.columns) == 5
+        assert len(table.columns) == 6
 
     def test_format_csv_excludes_org_fields(self):
         console = MagicMock()
@@ -334,3 +334,48 @@ class TestResultFormatter:
         assert "proxy_type" in header
         assert "domain" in header
         assert "isp" in header
+
+    def test_format_table_shows_domain_column_with_ipinfo(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=True)
+        results = [
+            {"ip": "1.1.1.1", "domain": "cloudflare.com", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
+            {"ip": "8.8.8.8", "domain": "google.com", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
+        ]
+        table = formatter.format_table(results, caps)
+        column_headers = [col.header for col in table.columns]
+        assert "Domain" in column_headers
+        assert len(table.columns) == 4  # IP + Domain + Network + Location
+
+    def test_format_table_hides_domain_column_without_ipinfo(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=False)
+        results = [
+            {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
+            {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
+        ]
+        table = formatter.format_table(results, caps)
+        column_headers = [col.header for col in table.columns]
+        assert "Domain" not in column_headers
+        assert len(table.columns) == 3  # IP + Network + Location
+
+    def test_format_csv_shows_domain_with_ipinfo_only(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=True)
+        results = [{"ip": "1.1.1.1", "domain": "cloudflare.com", "error": None}]
+        csv_output = formatter.format_csv(results, caps)
+        header = csv_output.split("\r\n")[0]
+        assert "domain" in header
+        assert "proxy_type" not in header
+
+    def test_format_csv_hides_domain_without_proxy_or_ipinfo(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False, has_ipinfo=False)
+        results = [{"ip": "1.1.1.1", "error": None}]
+        csv_output = formatter.format_csv(results, caps)
+        header = csv_output.split("\r\n")[0]
+        assert "domain" not in header

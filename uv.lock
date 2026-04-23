@@ -146,12 +146,13 @@ wheels = [
 
 [[package]]
 name = "argus"
-version = "0.0.7"
+version = "0.0.8"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "geoip2" },
     { name = "ip2proxy" },
+    { name = "maxminddb" },
     { name = "openpyxl" },
     { name = "platformdirs" },
     { name = "pypdf" },
@@ -176,6 +177,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.0" },
     { name = "geoip2", specifier = ">=4.8.0" },
     { name = "ip2proxy", specifier = ">=3.2.4" },
+    { name = "maxminddb", specifier = ">=2.6.0" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "platformdirs", specifier = ">=3.0.0" },
     { name = "pypdf", specifier = ">=6.4.1" },

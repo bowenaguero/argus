@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from rich.console import Console
 
@@ -40,3 +40,33 @@ class TestNeedsDownload:
         config = Config()
         db_manager = DatabaseManager(config, Console())
         assert db_manager.needs_download("GeoLite2-City") is True
+
+
+class TestDownloadIpinfoDatabase:
+    @patch("argus_cli.services.database.shutil.move")
+    @patch("argus_cli.services.database.DatabaseManager._update_state")
+    @patch("argus_cli.services.database.DatabaseManager._download_file")
+    @patch("argus_cli.services.database.DatabaseManager.needs_download")
+    def test_download_ipinfo_database_success(self, mock_needs, mock_dl, mock_state, mock_move):
+        mock_needs.return_value = True
+        config = Config()
+        console = MagicMock(spec=Console)
+        db_manager = DatabaseManager(config, console)
+
+        result = db_manager.download_ipinfo_database("test_token", "/tmp/ipinfo_lite.mmdb")
+
+        assert result is True
+        mock_dl.assert_called_once()
+        mock_move.assert_called_once()
+        mock_state.assert_called_once_with("ipinfo_lite")
+
+    @patch("argus_cli.services.database.DatabaseManager.needs_download")
+    def test_download_ipinfo_database_skips_when_fresh(self, mock_needs):
+        mock_needs.return_value = False
+        config = Config()
+        console = MagicMock(spec=Console)
+        db_manager = DatabaseManager(config, console)
+
+        result = db_manager.download_ipinfo_database("test_token", "/tmp/ipinfo_lite.mmdb")
+
+        assert result is True
