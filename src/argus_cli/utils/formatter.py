@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import csv
 import io
 import json
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from rich.console import Console
 from rich.panel import Panel
@@ -9,6 +12,9 @@ from rich.table import Table
 from rich.text import Text
 
 from ..core.exceptions import FileOperationError
+
+if TYPE_CHECKING:
+    from ..services.lookup import DataSourceCapabilities
 
 
 class ResultFormatter:
@@ -18,8 +24,10 @@ class ResultFormatter:
     def format_json(self, results: list[dict]) -> str:
         return json.dumps(results, indent=2)
 
-    def format_table(self, results: list[dict]) -> Table | Panel:
-        return self._format_panel(results[0]) if len(results) == 1 else self._format_grouped_table(results)
+    def format_table(self, results: list[dict], capabilities: DataSourceCapabilities | None = None) -> Table | Panel:
+        return (
+            self._format_panel(results[0]) if len(results) == 1 else self._format_grouped_table(results, capabilities)
+        )
 
     def _format_panel(self, result: dict) -> Panel:
         if result.get("error"):
@@ -65,25 +73,38 @@ class ResultFormatter:
 
         return lines
 
-    def _format_grouped_table(self, results: list[dict]) -> Table:
+    def _format_grouped_table(self, results: list[dict], capabilities: DataSourceCapabilities | None = None) -> Table:
+        show_org = capabilities is None or capabilities.has_org
+        show_proxy = capabilities is None or capabilities.has_proxy
+
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("IP", style="cyan", no_wrap=True)
-        table.add_column("Org Info", style="bright_green")
-        table.add_column("Proxy", style="red")
+        if show_org:
+            table.add_column("Org Info", style="bright_green")
+        if show_proxy:
+            table.add_column("Proxy", style="red")
         table.add_column("Network", style="bright_cyan")
         table.add_column("Location", style="yellow")
 
         for r in results:
             if r.get("error"):
-                table.add_row(r["ip"], "", "", f"[red]ERROR: {r['error']}[/red]", "")
+                row = [r["ip"]]
+                if show_org:
+                    row.append("")
+                if show_proxy:
+                    row.append("")
+                row.append(f"[red]ERROR: {r['error']}[/red]")
+                row.append("")
+                table.add_row(*row)
             else:
-                table.add_row(
-                    r["ip"],
-                    self._format_org_cell(r),
-                    self._format_proxy_cell(r),
-                    self._format_network_cell(r),
-                    self._format_location_cell(r),
-                )
+                row = [r["ip"]]
+                if show_org:
+                    row.append(self._format_org_cell(r))
+                if show_proxy:
+                    row.append(self._format_proxy_cell(r))
+                row.append(self._format_network_cell(r))
+                row.append(self._format_location_cell(r))
+                table.add_row(*row)
 
         return table
 
@@ -121,28 +142,24 @@ class ResultFormatter:
         location_parts = [p for p in [result.get("city"), result.get("country")] if p]
         return ", ".join(location_parts) if location_parts else "-"
 
-    def format_csv(self, results: list[dict]) -> str:
+    def format_csv(self, results: list[dict], capabilities: DataSourceCapabilities | None = None) -> str:
         if not results:
             return ""
 
-        fieldnames = [
-            "ip",
-            "org_managed",
-            "org_id",
-            "platform",
-            "proxy_type",
-            "domain",
-            "city",
-            "region",
-            "country",
-            "iso_code",
-            "postal",
-            "isp",
-            "usage_type",
-            "asn",
-            "asn_org",
-            "error",
-        ]
+        show_org = capabilities is None or capabilities.has_org
+        show_proxy = capabilities is None or capabilities.has_proxy
+
+        fieldnames = ["ip"]
+        if show_org:
+            fieldnames.extend(["org_managed", "org_id", "platform"])
+        if show_proxy:
+            fieldnames.append("proxy_type")
+        if show_proxy:
+            fieldnames.append("domain")
+        fieldnames.extend(["city", "region", "country", "iso_code", "postal"])
+        if show_proxy:
+            fieldnames.extend(["isp", "usage_type"])
+        fieldnames.extend(["asn", "asn_org", "error"])
 
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_ALL)
@@ -154,7 +171,13 @@ class ResultFormatter:
 
         return output.getvalue().rstrip("\r\n")
 
-    def write_to_file(self, results: list[dict], output_file: str | None, file_format: str = "json") -> None:
+    def write_to_file(
+        self,
+        results: list[dict],
+        output_file: str | None,
+        file_format: str = "json",
+        capabilities: DataSourceCapabilities | None = None,
+    ) -> None:
         file_path: str
         if output_file == "":
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -166,7 +189,7 @@ class ResultFormatter:
         try:
             if file_format == "csv":
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(self.format_csv(results))
+                    f.write(self.format_csv(results, capabilities))
             else:
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(results, f, indent=2)

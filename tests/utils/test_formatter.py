@@ -4,6 +4,7 @@ import os
 import tempfile
 from unittest.mock import MagicMock
 
+from argus_cli.services.lookup import DataSourceCapabilities
 from argus_cli.utils.formatter import ResultFormatter
 
 
@@ -213,3 +214,123 @@ class TestResultFormatter:
         table = formatter.format_table([])
 
         assert table is not None
+
+    def test_format_table_hides_org_column(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=True, has_org=False)
+        results = [
+            {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
+            {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
+        ]
+        table = formatter.format_table(results, caps)
+        column_headers = [col.header for col in table.columns]
+        assert "Org Info" not in column_headers
+        assert "Proxy" in column_headers
+        assert len(table.columns) == 4
+
+    def test_format_table_hides_proxy_column(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=True)
+        results = [
+            {
+                "ip": "1.1.1.1",
+                "city": "Austin",
+                "country": "US",
+                "asn": 13335,
+                "asn_org": "Cloudflare",
+                "org_managed": False,
+                "org_id": None,
+                "platform": None,
+                "error": None,
+            },
+            {
+                "ip": "8.8.8.8",
+                "city": "MV",
+                "country": "US",
+                "asn": 15169,
+                "asn_org": "Google",
+                "org_managed": True,
+                "org_id": "GOOG",
+                "platform": "gcp",
+                "error": None,
+            },
+        ]
+        table = formatter.format_table(results, caps)
+        column_headers = [col.header for col in table.columns]
+        assert "Proxy" not in column_headers
+        assert "Org Info" in column_headers
+        assert len(table.columns) == 4
+
+    def test_format_table_hides_both_optional_columns(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False)
+        results = [
+            {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
+            {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
+        ]
+        table = formatter.format_table(results, caps)
+        column_headers = [col.header for col in table.columns]
+        assert "Org Info" not in column_headers
+        assert "Proxy" not in column_headers
+        assert len(table.columns) == 3
+
+    def test_format_table_error_row_with_hidden_columns(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=False)
+        results = [
+            {"ip": "1.2.3.4", "error": "IP not found in database"},
+            {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
+        ]
+        table = formatter.format_table(results, caps)
+        assert len(table.columns) == 3
+        assert table.row_count == 2
+
+    def test_format_table_no_capabilities_shows_all(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        results = [
+            {"ip": "1.1.1.1", "city": "Austin", "country": "US", "asn": 13335, "asn_org": "Cloudflare", "error": None},
+            {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
+        ]
+        table = formatter.format_table(results)
+        assert len(table.columns) == 5
+
+    def test_format_csv_excludes_org_fields(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=True, has_org=False)
+        results = [{"ip": "1.1.1.1", "error": None}]
+        csv_output = formatter.format_csv(results, caps)
+        header = csv_output.split("\r\n")[0]
+        assert "org_managed" not in header
+        assert "org_id" not in header
+        assert "platform" not in header
+        assert "proxy_type" in header
+
+    def test_format_csv_excludes_proxy_fields(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        caps = DataSourceCapabilities(has_proxy=False, has_org=True)
+        results = [{"ip": "1.1.1.1", "error": None}]
+        csv_output = formatter.format_csv(results, caps)
+        header = csv_output.split("\r\n")[0]
+        assert "proxy_type" not in header
+        assert "isp" not in header
+        assert "usage_type" not in header
+        assert "domain" not in header
+        assert "org_managed" in header
+
+    def test_format_csv_no_capabilities_shows_all(self):
+        console = MagicMock()
+        formatter = ResultFormatter(console)
+        results = [{"ip": "1.1.1.1", "error": None}]
+        csv_output = formatter.format_csv(results)
+        header = csv_output.split("\r\n")[0]
+        assert "org_managed" in header
+        assert "proxy_type" in header
+        assert "domain" in header
+        assert "isp" in header

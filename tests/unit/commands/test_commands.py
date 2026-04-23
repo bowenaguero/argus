@@ -7,6 +7,7 @@ import pytest
 
 from argus_cli.commands.lookup import LookupCommand
 from argus_cli.commands.setup import SetupCommand
+from argus_cli.services.lookup import DataSourceCapabilities
 
 
 class TestSetupCommand:
@@ -105,7 +106,10 @@ class TestLookupCommand:
                 mock_collect.return_value = ["8.8.8.8"]
 
                 with patch.object(lookup_command, "lookup_service") as mock_service:
-                    mock_service.lookup_ips.return_value = [{"ip": "8.8.8.8", "country": "US", "error": None}]
+                    mock_service.lookup_ips.return_value = (
+                        [{"ip": "8.8.8.8", "country": "US", "error": None}],
+                        DataSourceCapabilities(has_proxy=False, has_org=False),
+                    )
 
                     with patch.object(lookup_command, "_filter_results") as mock_filter:
                         mock_filter.return_value = [{"ip": "8.8.8.8", "country": "US", "error": None}]

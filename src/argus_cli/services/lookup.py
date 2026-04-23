@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 
 import geoip2.database
 import geoip2.errors
@@ -15,6 +16,12 @@ from ..utils.logger import get_logger
 from .org_lookup import OrgLookup
 
 logger = get_logger()
+
+
+@dataclass
+class DataSourceCapabilities:
+    has_proxy: bool
+    has_org: bool
 
 
 class GeoIPLookup:
@@ -73,7 +80,7 @@ class GeoIPLookup:
 
         return result
 
-    def lookup_ips(self, ips: list[str]) -> list[dict]:
+    def lookup_ips(self, ips: list[str]) -> tuple[list[dict], DataSourceCapabilities]:
         logger.debug(f"Starting batch lookup for {len(ips)} IP(s)")
         results = []
 
@@ -85,6 +92,11 @@ class GeoIPLookup:
         if self.has_proxy_db:
             proxy_db = IP2Proxy.IP2Proxy()
             proxy_db.open(self.proxy_db_path)
+
+        capabilities = DataSourceCapabilities(
+            has_proxy=self.has_proxy_db,
+            has_org=self.org_lookup.has_org_dbs,
+        )
 
         try:
             with (
@@ -115,4 +127,4 @@ class GeoIPLookup:
                 proxy_db.close()
             self.org_lookup.close()
 
-        return results
+        return results, capabilities
