@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/bowenaguero/argus/compare/argus-v0.0.7...argus-v0.0.8) (2026-04-23)
+
+
+### Features
+
+* dynamic column visibility based on data source availability ([#31](https://github.com/bowenaguero/argus/issues/31)) ([10773f0](https://github.com/bowenaguero/argus/commit/10773f03902968439c691918ca17908eedda8d6c))
+
 ## [0.0.7](https://github.com/bowenaguero/argus/compare/argus-v0.0.6...argus-v0.0.7) (2026-04-09)
 
 
