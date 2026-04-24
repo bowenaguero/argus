@@ -5,6 +5,7 @@ import geoip2.database
 import geoip2.errors
 import IP2Proxy
 import maxminddb
+from greynoise_psychic.bitmap import Psychic2Parser
 from rich.progress import (
     BarColumn,
     Progress,
@@ -24,22 +25,31 @@ class DataSourceCapabilities:
     has_proxy: bool
     has_org: bool
     has_ipinfo: bool = False
+    has_greynoise: bool = False
 
 
 class GeoIPLookup:
     def __init__(
-        self, city_db_path: str, asn_db_path: str, proxy_db_path: str, org_db_dir: str, ipinfo_db_path: str = ""
+        self,
+        city_db_path: str,
+        asn_db_path: str,
+        proxy_db_path: str,
+        org_db_dir: str,
+        ipinfo_db_path: str = "",
+        greynoise_db_path: str = "",
     ):
         self.city_db_path = city_db_path
         self.asn_db_path = asn_db_path
         self.proxy_db_path = proxy_db_path
         self.org_db_dir = org_db_dir
         self.ipinfo_db_path = ipinfo_db_path
+        self.greynoise_db_path = greynoise_db_path
         self.has_proxy_db = os.path.exists(proxy_db_path)
         self.has_ipinfo_db = bool(ipinfo_db_path) and os.path.exists(ipinfo_db_path)
+        self.has_greynoise_db = bool(greynoise_db_path) and os.path.exists(greynoise_db_path)
         self.org_lookup = OrgLookup(org_db_dir)
 
-    def lookup_ip(self, city_reader, asn_reader, proxy_db, ipinfo_reader, ip: str) -> dict:
+    def lookup_ip(self, city_reader, asn_reader, proxy_db, ipinfo_reader, greynoise_reader, ip: str) -> dict:
         logger.debug(f"Looking up IP: {ip}")
         try:
             city_resp = city_reader.city(ip)
@@ -66,14 +76,20 @@ class GeoIPLookup:
             "org_managed": False,
             "org_id": None,
             "platform": None,
+            "greynoise_seen": False,
+            "greynoise_classification": None,
+            "greynoise_3wh": None,
             "error": None,
         }
 
-        if proxy_db and self.has_proxy_db:
+        if proxy_db:
             self._enrich_proxy(result, proxy_db, ip)
 
-        if ipinfo_reader and self.has_ipinfo_db:
+        if ipinfo_reader:
             self._enrich_ipinfo(result, ipinfo_reader, ip)
+
+        if greynoise_reader:
+            self._enrich_greynoise(result, greynoise_reader, ip)
 
         if self.org_lookup.has_org_dbs:
             org_result = self.org_lookup.lookup_ip(ip)
@@ -99,6 +115,26 @@ class GeoIPLookup:
         except Exception:
             logger.debug(f"IPinfo lookup failed for {ip}")
 
+    def _enrich_greynoise(self, result: dict, greynoise_reader, ip: str) -> None:
+        try:
+            record = greynoise_reader.lookup_ip(ip)
+            logger.debug(f"GreyNoise raw record for {ip}: {record}")
+            if not record:
+                return
+            classifications = record.get("classifications", {})
+            seen = bool(classifications.get("seen", False))
+            result["greynoise_seen"] = seen
+            if seen:
+                if classifications.get("malicious"):
+                    result["greynoise_classification"] = "malicious"
+                elif classifications.get("suspicious"):
+                    result["greynoise_classification"] = "suspicious"
+                else:
+                    result["greynoise_classification"] = "unknown"
+                result["greynoise_3wh"] = bool(classifications.get("3wh_completed", False))
+        except Exception as e:
+            logger.debug(f"GreyNoise lookup failed for {ip}: {e}")
+
     def lookup_ips(self, ips: list[str]) -> tuple[list[dict], DataSourceCapabilities]:
         logger.debug(f"Starting batch lookup for {len(ips)} IP(s)")
         results = []
@@ -107,19 +143,31 @@ class GeoIPLookup:
 
         self.org_lookup.load_databases()
 
+        # Re-check file existence here rather than relying on the cached __init__ values —
+        # optional DBs may have been downloaded by ensure_databases() after init.
         proxy_db = None
-        if self.has_proxy_db:
+        if self.proxy_db_path and os.path.exists(self.proxy_db_path):
             proxy_db = IP2Proxy.IP2Proxy()
             proxy_db.open(self.proxy_db_path)
 
         ipinfo_reader = None
-        if self.has_ipinfo_db:
+        if self.ipinfo_db_path and os.path.exists(self.ipinfo_db_path):
             ipinfo_reader = maxminddb.open_database(self.ipinfo_db_path)
 
+        greynoise_reader = None
+        if self.greynoise_db_path and os.path.exists(self.greynoise_db_path):
+            try:
+                greynoise_reader = Psychic2Parser(self.greynoise_db_path)
+                stats = greynoise_reader.get_stats()
+                logger.debug(f"GreyNoise DB loaded: model={stats.get('model')}, version={stats.get('version')}, dates={stats.get('start_date')}..{stats.get('end_date')}, counts={stats.get('bitmap_counts')}")
+            except Exception as e:
+                logger.warning(f"GreyNoise DB failed to load ({self.greynoise_db_path}): {e}")
+
         capabilities = DataSourceCapabilities(
-            has_proxy=self.has_proxy_db,
+            has_proxy=proxy_db is not None,
             has_org=self.org_lookup.has_org_dbs,
-            has_ipinfo=self.has_ipinfo_db,
+            has_ipinfo=ipinfo_reader is not None,
+            has_greynoise=greynoise_reader is not None,
         )
 
         try:
@@ -139,12 +187,14 @@ class GeoIPLookup:
                         task = progress.add_task("lookup", total=len(ips), current_ip="")
                         for ip in ips:
                             progress.update(task, current_ip=ip)
-                            result = self.lookup_ip(city_reader, asn_reader, proxy_db, ipinfo_reader, ip)
+                            result = self.lookup_ip(
+                                city_reader, asn_reader, proxy_db, ipinfo_reader, greynoise_reader, ip
+                            )
                             results.append(result)
                             progress.advance(task)
                 else:
                     for ip in ips:
-                        result = self.lookup_ip(city_reader, asn_reader, proxy_db, ipinfo_reader, ip)
+                        result = self.lookup_ip(city_reader, asn_reader, proxy_db, ipinfo_reader, greynoise_reader, ip)
                         results.append(result)
         finally:
             if proxy_db:

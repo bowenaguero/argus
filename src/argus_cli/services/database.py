@@ -24,6 +24,8 @@ logger = get_logger()
 
 IP2PROXY_DB_CODE = "PX11LITEBIN"
 IPINFO_EDITION_ID = "ipinfo_lite"
+GREYNOISE_EDITION_ID = "greynoise_psychic"
+GREYNOISE_REFRESH_HOURS = 168  # 7 days — 30-day rolling window changes slowly
 
 
 class DatabaseManager:
@@ -44,14 +46,14 @@ class DatabaseManager:
         with open(self.config.state_file, "w") as f:
             json.dump(state, f, indent=2)
 
-    def needs_download(self, edition_id: str) -> bool:
+    def needs_download(self, edition_id: str, hours: int = 24) -> bool:
         state = self.load_state()
         last_download = state.get(edition_id)
         if not last_download:
             return True
         try:
             last_dt = datetime.fromisoformat(last_download)
-            stale = datetime.now() - last_dt > timedelta(hours=24)
+            stale = datetime.now() - last_dt > timedelta(hours=hours)
         except Exception:
             return True
         else:
@@ -131,7 +133,35 @@ class DatabaseManager:
             self.console.print("[green]✓[/green] IPinfo Lite database downloaded successfully")
             return True
 
-    def _download_file(self, url: str, temp_file: str, description: str) -> None:
+    def download_greynoise_database(self, api_key: str, db_path: str) -> bool:
+        if not self.needs_download(GREYNOISE_EDITION_ID, hours=GREYNOISE_REFRESH_HOURS):
+            return True
+
+        logger.debug("Downloading GreyNoise Psychic database (30-day range, Model 2)")
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        url = f"https://psychic.labs.greynoise.io/v1/psychic/generate/{start_date}/{end_date}/2"
+        temp_file = str(self.config.data_dir / "temp_greynoise.bin")
+
+        self.console.print("[dim]GreyNoise (30-day range) — first download may take a few minutes[/dim]")
+
+        try:
+            self._download_file(url, temp_file, "GreyNoise Psychic", headers={"key": api_key})
+            shutil.move(temp_file, db_path)
+            self._update_state(GREYNOISE_EDITION_ID)
+        except Exception as e:
+            self.console.print(f"[red]✗ Error:[/red] {e}", style="bold")
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+            if os.path.exists(db_path):
+                self.console.print("[yellow]Continuing with existing database...[/yellow]")
+                return True
+            return False
+        else:
+            self.console.print("[green]✓[/green] GreyNoise Psychic database downloaded successfully")
+            return True
+
+    def _download_file(self, url: str, temp_file: str, description: str, headers: dict | None = None) -> None:
         with Progress(
             SpinnerColumn(),
             TextColumn("[bold blue]{task.description}"),
@@ -142,9 +172,13 @@ class DatabaseManager:
         ) as progress:
             task = progress.add_task(f"Downloading {description}", total=None)
 
-            with requests.get(url, stream=True, timeout=60) as r:
+            with requests.get(url, stream=True, timeout=120, headers=headers or {}) as r:
                 if r.status_code in [401, 403]:
                     msg = f"{r.status_code} {r.reason}: Invalid or expired download token"
+                    raise requests.exceptions.HTTPError(msg)
+                if r.status_code >= 400:
+                    body = r.text[:500] if r.text else "(no body)"
+                    msg = f"{r.status_code} {r.reason} — {body}"
                     raise requests.exceptions.HTTPError(msg)
                 r.raise_for_status()
 
@@ -215,6 +249,9 @@ class DatabaseManager:
             ):
                 raise DatabaseError("Required MaxMind databases are unavailable")  # noqa: TRY003
 
+        self._ensure_optional_databases()
+
+    def _ensure_optional_databases(self) -> None:
         ip2proxy_token = self.config.get_license_key("ip2proxy_token")
         if ip2proxy_token:
             self.download_ip2proxy_database(ip2proxy_token, IP2PROXY_DB_CODE, self.config.db_proxy)
@@ -230,6 +267,12 @@ class DatabaseManager:
             self.console.print(
                 "[yellow]i[/yellow] IPinfo database not configured. Domain enrichment will be unavailable."
             )
+
+        greynoise_key = self.config.get_license_key("greynoise_api_key")
+        if greynoise_key:
+            self.download_greynoise_database(greynoise_key, self.config.db_greynoise)
+        elif not os.path.exists(self.config.db_greynoise):
+            self.console.print("[yellow]i[/yellow] GreyNoise not configured. Threat intelligence will be unavailable.")
 
         org_dir = os.path.join(self.config.data_dir, "org")
         if not os.path.exists(org_dir) or not any(Path(org_dir).glob("*.db")):

@@ -28,6 +28,7 @@ dependencies = [
     "click>=8.1.0",
     "platformdirs>=3.0.0",
     "pypdf>=6.4.1",
+    "greynoise-psychic>=0.1.0",
 ]
 
 [project.scripts]
@@ -115,3 +116,6 @@ ignore = [
 
 [tool.ruff.format]
 preview = true
+
+[tool.uv.sources]
+greynoise-psychic = { git = "https://github.com/GreyNoise-Intelligence/greynoise-psychic.git", subdirectory = "python" }
