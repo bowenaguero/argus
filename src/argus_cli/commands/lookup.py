@@ -18,7 +18,12 @@ class LookupCommand:
         self.config = Config()
         self.db_manager = DatabaseManager(self.config, self.console)
         self.lookup_service = GeoIPLookup(
-            self.config.db_city, self.config.db_asn, self.config.db_proxy, self.config.db_org_dir, self.config.db_ipinfo
+            self.config.db_city,
+            self.config.db_asn,
+            self.config.db_proxy,
+            self.config.db_org_dir,
+            self.config.db_ipinfo,
+            self.config.db_greynoise,
         )
         self.file_parser = FileParser()
         self.formatter = ResultFormatter(self.console)

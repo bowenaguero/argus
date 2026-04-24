@@ -24,22 +24,31 @@ class DataSourceCapabilities:
     has_proxy: bool
     has_org: bool
     has_ipinfo: bool = False
+    has_greynoise: bool = False
 
 
 class GeoIPLookup:
     def __init__(
-        self, city_db_path: str, asn_db_path: str, proxy_db_path: str, org_db_dir: str, ipinfo_db_path: str = ""
+        self,
+        city_db_path: str,
+        asn_db_path: str,
+        proxy_db_path: str,
+        org_db_dir: str,
+        ipinfo_db_path: str = "",
+        greynoise_db_path: str = "",
     ):
         self.city_db_path = city_db_path
         self.asn_db_path = asn_db_path
         self.proxy_db_path = proxy_db_path
         self.org_db_dir = org_db_dir
         self.ipinfo_db_path = ipinfo_db_path
+        self.greynoise_db_path = greynoise_db_path
         self.has_proxy_db = os.path.exists(proxy_db_path)
         self.has_ipinfo_db = bool(ipinfo_db_path) and os.path.exists(ipinfo_db_path)
+        self.has_greynoise_db = bool(greynoise_db_path) and os.path.exists(greynoise_db_path)
         self.org_lookup = OrgLookup(org_db_dir)
 
-    def lookup_ip(self, city_reader, asn_reader, proxy_db, ipinfo_reader, ip: str) -> dict:
+    def lookup_ip(self, city_reader, asn_reader, proxy_db, ipinfo_reader, greynoise_reader, ip: str) -> dict:
         logger.debug(f"Looking up IP: {ip}")
         try:
             city_resp = city_reader.city(ip)
@@ -66,6 +75,9 @@ class GeoIPLookup:
             "org_managed": False,
             "org_id": None,
             "platform": None,
+            "greynoise_seen": False,
+            "greynoise_classification": None,
+            "greynoise_3wh": None,
             "error": None,
         }
 
@@ -74,6 +86,9 @@ class GeoIPLookup:
 
         if ipinfo_reader and self.has_ipinfo_db:
             self._enrich_ipinfo(result, ipinfo_reader, ip)
+
+        if greynoise_reader and self.has_greynoise_db:
+            self._enrich_greynoise(result, greynoise_reader, ip)
 
         if self.org_lookup.has_org_dbs:
             org_result = self.org_lookup.lookup_ip(ip)
@@ -99,6 +114,17 @@ class GeoIPLookup:
         except Exception:
             logger.debug(f"IPinfo lookup failed for {ip}")
 
+    def _enrich_greynoise(self, result: dict, greynoise_reader, ip: str) -> None:
+        try:
+            record = greynoise_reader.get(ip)
+            if record:
+                result["greynoise_seen"] = bool(record.get("seen", False))
+                result["greynoise_classification"] = record.get("classification") or None
+                raw_3wh = record.get("3wh_completed")
+                result["greynoise_3wh"] = bool(raw_3wh) if raw_3wh is not None else None
+        except Exception:
+            logger.debug(f"GreyNoise lookup failed for {ip}")
+
     def lookup_ips(self, ips: list[str]) -> tuple[list[dict], DataSourceCapabilities]:
         logger.debug(f"Starting batch lookup for {len(ips)} IP(s)")
         results = []
@@ -116,10 +142,15 @@ class GeoIPLookup:
         if self.has_ipinfo_db:
             ipinfo_reader = maxminddb.open_database(self.ipinfo_db_path)
 
+        greynoise_reader = None
+        if self.has_greynoise_db:
+            greynoise_reader = maxminddb.open_database(self.greynoise_db_path)
+
         capabilities = DataSourceCapabilities(
             has_proxy=self.has_proxy_db,
             has_org=self.org_lookup.has_org_dbs,
             has_ipinfo=self.has_ipinfo_db,
+            has_greynoise=self.has_greynoise_db,
         )
 
         try:
@@ -139,18 +170,22 @@ class GeoIPLookup:
                         task = progress.add_task("lookup", total=len(ips), current_ip="")
                         for ip in ips:
                             progress.update(task, current_ip=ip)
-                            result = self.lookup_ip(city_reader, asn_reader, proxy_db, ipinfo_reader, ip)
+                            result = self.lookup_ip(
+                                city_reader, asn_reader, proxy_db, ipinfo_reader, greynoise_reader, ip
+                            )
                             results.append(result)
                             progress.advance(task)
                 else:
                     for ip in ips:
-                        result = self.lookup_ip(city_reader, asn_reader, proxy_db, ipinfo_reader, ip)
+                        result = self.lookup_ip(city_reader, asn_reader, proxy_db, ipinfo_reader, greynoise_reader, ip)
                         results.append(result)
         finally:
             if proxy_db:
                 proxy_db.close()
             if ipinfo_reader:
                 ipinfo_reader.close()
+            if greynoise_reader:
+                greynoise_reader.close()
             self.org_lookup.close()
 
         return results, capabilities

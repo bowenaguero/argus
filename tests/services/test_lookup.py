@@ -31,7 +31,7 @@ class TestLookupIP:
 
         lookup_service = GeoIPLookup("", "", "", "")
         lookup_service.has_proxy_db = True
-        result = lookup_service.lookup_ip(city_reader, asn_reader, proxy_db, None, "8.8.8.8")
+        result = lookup_service.lookup_ip(city_reader, asn_reader, proxy_db, None, None, "8.8.8.8")
 
         assert result["ip"] == "8.8.8.8"
         assert result["city"] == "Mountain View"
@@ -55,7 +55,7 @@ class TestLookupIP:
         city_reader.city.side_effect = geoip2.errors.AddressNotFoundError("IP not found")
 
         lookup_service = GeoIPLookup("", "", "", "")
-        result = lookup_service.lookup_ip(city_reader, asn_reader, None, None, "1.2.3.4")
+        result = lookup_service.lookup_ip(city_reader, asn_reader, None, None, None, "1.2.3.4")
 
         assert result["ip"] == "1.2.3.4"
         assert result["error"] == "IP not found in database"
@@ -66,7 +66,7 @@ class TestLookupIP:
         city_reader.city.side_effect = ValueError("Invalid IP")
 
         lookup_service = GeoIPLookup("", "", "", "")
-        result = lookup_service.lookup_ip(city_reader, asn_reader, None, None, "invalid")
+        result = lookup_service.lookup_ip(city_reader, asn_reader, None, None, None, "invalid")
 
         assert result["ip"] == "invalid"
         assert result["error"] == "Invalid IP format"
@@ -92,7 +92,7 @@ class TestLookupIP:
 
         lookup_service = GeoIPLookup("", "", "", "")
         lookup_service.has_ipinfo_db = True
-        result = lookup_service.lookup_ip(city_reader, asn_reader, None, ipinfo_reader, "8.8.8.8")
+        result = lookup_service.lookup_ip(city_reader, asn_reader, None, ipinfo_reader, None, "8.8.8.8")
 
         assert result["domain"] == "google.com"
 
@@ -117,7 +117,7 @@ class TestLookupIP:
 
         lookup_service = GeoIPLookup("", "", "", "")
         lookup_service.has_ipinfo_db = True
-        result = lookup_service.lookup_ip(city_reader, asn_reader, None, ipinfo_reader, "8.8.8.8")
+        result = lookup_service.lookup_ip(city_reader, asn_reader, None, ipinfo_reader, None, "8.8.8.8")
 
         assert result["domain"] is None
         assert result["error"] is None
