@@ -82,13 +82,13 @@ class GeoIPLookup:
             "error": None,
         }
 
-        if proxy_db and self.has_proxy_db:
+        if proxy_db:
             self._enrich_proxy(result, proxy_db, ip)
 
-        if ipinfo_reader and self.has_ipinfo_db:
+        if ipinfo_reader:
             self._enrich_ipinfo(result, ipinfo_reader, ip)
 
-        if greynoise_reader and self.has_greynoise_db:
+        if greynoise_reader:
             self._enrich_greynoise(result, greynoise_reader, ip)
 
         if self.org_lookup.has_org_dbs:
@@ -142,24 +142,26 @@ class GeoIPLookup:
 
         self.org_lookup.load_databases()
 
+        # Re-check file existence here rather than relying on the cached __init__ values —
+        # optional DBs may have been downloaded by ensure_databases() after init.
         proxy_db = None
-        if self.has_proxy_db:
+        if self.proxy_db_path and os.path.exists(self.proxy_db_path):
             proxy_db = IP2Proxy.IP2Proxy()
             proxy_db.open(self.proxy_db_path)
 
         ipinfo_reader = None
-        if self.has_ipinfo_db:
+        if self.ipinfo_db_path and os.path.exists(self.ipinfo_db_path):
             ipinfo_reader = maxminddb.open_database(self.ipinfo_db_path)
 
         greynoise_reader = None
-        if self.has_greynoise_db:
+        if self.greynoise_db_path and os.path.exists(self.greynoise_db_path):
             greynoise_reader = Psychic2Parser(self.greynoise_db_path)
 
         capabilities = DataSourceCapabilities(
-            has_proxy=self.has_proxy_db,
+            has_proxy=proxy_db is not None,
             has_org=self.org_lookup.has_org_dbs,
-            has_ipinfo=self.has_ipinfo_db,
-            has_greynoise=self.has_greynoise_db,
+            has_ipinfo=ipinfo_reader is not None,
+            has_greynoise=greynoise_reader is not None,
         )
 
         try:
