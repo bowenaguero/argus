@@ -5,6 +5,7 @@ import geoip2.database
 import geoip2.errors
 import IP2Proxy
 import maxminddb
+from greynoise_psychic.bitmap import Psychic2Parser
 from rich.progress import (
     BarColumn,
     Progress,
@@ -116,12 +117,20 @@ class GeoIPLookup:
 
     def _enrich_greynoise(self, result: dict, greynoise_reader, ip: str) -> None:
         try:
-            record = greynoise_reader.get(ip)
-            if record:
-                result["greynoise_seen"] = bool(record.get("seen", False))
-                result["greynoise_classification"] = record.get("classification") or None
-                raw_3wh = record.get("3wh_completed")
-                result["greynoise_3wh"] = bool(raw_3wh) if raw_3wh is not None else None
+            record = greynoise_reader.lookup_ip(ip)
+            if not record:
+                return
+            classifications = record.get("classifications", {})
+            seen = bool(classifications.get("seen", False))
+            result["greynoise_seen"] = seen
+            if seen:
+                if classifications.get("malicious"):
+                    result["greynoise_classification"] = "malicious"
+                elif classifications.get("suspicious"):
+                    result["greynoise_classification"] = "suspicious"
+                else:
+                    result["greynoise_classification"] = "unknown"
+                result["greynoise_3wh"] = bool(classifications.get("3wh_completed", False))
         except Exception:
             logger.debug(f"GreyNoise lookup failed for {ip}")
 
@@ -144,7 +153,7 @@ class GeoIPLookup:
 
         greynoise_reader = None
         if self.has_greynoise_db:
-            greynoise_reader = maxminddb.open_database(self.greynoise_db_path)
+            greynoise_reader = Psychic2Parser(self.greynoise_db_path)
 
         capabilities = DataSourceCapabilities(
             has_proxy=self.has_proxy_db,
@@ -184,8 +193,6 @@ class GeoIPLookup:
                 proxy_db.close()
             if ipinfo_reader:
                 ipinfo_reader.close()
-            if greynoise_reader:
-                greynoise_reader.close()
             self.org_lookup.close()
 
         return results, capabilities

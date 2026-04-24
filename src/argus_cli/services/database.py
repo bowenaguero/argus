@@ -141,8 +141,8 @@ class DatabaseManager:
         # Use yesterday as end_date — GreyNoise may not publish the current day's data yet
         end_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
         start_date = (datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d")
-        url = f"https://psychic.labs.greynoise.io/v1/psychic/generate/{start_date}/{end_date}/2/mmdb"
-        temp_file = str(self.config.data_dir / "temp_greynoise.mmdb")
+        url = f"https://psychic.labs.greynoise.io/v1/psychic/generate/{start_date}/{end_date}/2"
+        temp_file = str(self.config.data_dir / "temp_greynoise.bin")
 
         self.console.print("[dim]GreyNoise (30-day range) — first download may take a few minutes[/dim]")
 

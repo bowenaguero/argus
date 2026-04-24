@@ -14,7 +14,7 @@ class Config:
         self.db_asn = str(self.data_dir / "GeoLite2-ASN.mmdb")
         self.db_proxy = str(self.data_dir / "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN.BIN")
         self.db_ipinfo = str(self.data_dir / "ipinfo_lite.mmdb")
-        self.db_greynoise = str(self.data_dir / "greynoise.mmdb")
+        self.db_greynoise = str(self.data_dir / "greynoise.bin")
         self.db_org_dir = str(self.data_dir / "org")
         self.state_file = str(self.data_dir / "state.json")
         self.config_file = str(self.data_dir / "keys.json")
