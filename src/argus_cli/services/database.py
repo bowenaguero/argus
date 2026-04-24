@@ -138,9 +138,8 @@ class DatabaseManager:
             return True
 
         logger.debug("Downloading GreyNoise Psychic database (30-day range, Model 2)")
-        # Use yesterday as end_date — GreyNoise may not publish the current day's data yet
-        end_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d")
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         url = f"https://psychic.labs.greynoise.io/v1/psychic/generate/{start_date}/{end_date}/2"
         temp_file = str(self.config.data_dir / "temp_greynoise.bin")
 
