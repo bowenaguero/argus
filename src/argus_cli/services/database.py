@@ -138,8 +138,9 @@ class DatabaseManager:
             return True
 
         logger.debug("Downloading GreyNoise Psychic database (30-day range, Model 2)")
-        end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        # Use yesterday as end_date — GreyNoise may not publish the current day's data yet
+        end_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d")
         url = f"https://psychic.labs.greynoise.io/v1/psychic/generate/{start_date}/{end_date}/2/mmdb"
         temp_file = str(self.config.data_dir / "temp_greynoise.mmdb")
 
@@ -175,6 +176,10 @@ class DatabaseManager:
             with requests.get(url, stream=True, timeout=120, headers=headers or {}) as r:
                 if r.status_code in [401, 403]:
                     msg = f"{r.status_code} {r.reason}: Invalid or expired download token"
+                    raise requests.exceptions.HTTPError(msg)
+                if r.status_code >= 400:
+                    body = r.text[:500] if r.text else "(no body)"
+                    msg = f"{r.status_code} {r.reason} — {body}"
                     raise requests.exceptions.HTTPError(msg)
                 r.raise_for_status()
 
