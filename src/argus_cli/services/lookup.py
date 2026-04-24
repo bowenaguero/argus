@@ -118,6 +118,7 @@ class GeoIPLookup:
     def _enrich_greynoise(self, result: dict, greynoise_reader, ip: str) -> None:
         try:
             record = greynoise_reader.lookup_ip(ip)
+            logger.debug(f"GreyNoise raw record for {ip}: {record}")
             if not record:
                 return
             classifications = record.get("classifications", {})
@@ -131,8 +132,8 @@ class GeoIPLookup:
                 else:
                     result["greynoise_classification"] = "unknown"
                 result["greynoise_3wh"] = bool(classifications.get("3wh_completed", False))
-        except Exception:
-            logger.debug(f"GreyNoise lookup failed for {ip}")
+        except Exception as e:
+            logger.debug(f"GreyNoise lookup failed for {ip}: {e}")
 
     def lookup_ips(self, ips: list[str]) -> tuple[list[dict], DataSourceCapabilities]:
         logger.debug(f"Starting batch lookup for {len(ips)} IP(s)")
@@ -155,7 +156,12 @@ class GeoIPLookup:
 
         greynoise_reader = None
         if self.greynoise_db_path and os.path.exists(self.greynoise_db_path):
-            greynoise_reader = Psychic2Parser(self.greynoise_db_path)
+            try:
+                greynoise_reader = Psychic2Parser(self.greynoise_db_path)
+                stats = greynoise_reader.get_stats()
+                logger.debug(f"GreyNoise DB loaded: model={stats.get('model')}, version={stats.get('version')}, dates={stats.get('start_date')}..{stats.get('end_date')}, counts={stats.get('bitmap_counts')}")
+            except Exception as e:
+                logger.warning(f"GreyNoise DB failed to load ({self.greynoise_db_path}): {e}")
 
         capabilities = DataSourceCapabilities(
             has_proxy=proxy_db is not None,
