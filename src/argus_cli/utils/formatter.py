@@ -63,6 +63,10 @@ class ResultFormatter:
         if result.get("domain"):
             lines.append(Text("Domain: ", style="bright_cyan") + Text(result["domain"]))
 
+        gn_line = self._format_greynoise_panel_line(result)
+        if gn_line is not None:
+            lines.append(gn_line)
+
         proxy_parts = [
             p
             for p in [result.get("proxy_type"), f"({result.get('usage_type')})" if result.get("usage_type") else None]
@@ -77,6 +81,7 @@ class ResultFormatter:
         show_org = capabilities is None or capabilities.has_org
         show_proxy = capabilities is None or capabilities.has_proxy
         show_domain = capabilities is None or capabilities.has_ipinfo
+        show_greynoise = capabilities is None or capabilities.has_greynoise
 
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("IP", style="cyan", no_wrap=True)
@@ -86,15 +91,19 @@ class ResultFormatter:
             table.add_column("Proxy", style="red")
         if show_domain:
             table.add_column("Domain", style="bright_cyan")
+        if show_greynoise:
+            table.add_column("GreyNoise", style="bright_yellow")
         table.add_column("Network", style="bright_cyan")
         table.add_column("Location", style="yellow")
 
         for r in results:
-            table.add_row(*self._build_table_row(r, show_org, show_proxy, show_domain))
+            table.add_row(*self._build_table_row(r, show_org, show_proxy, show_domain, show_greynoise))
 
         return table
 
-    def _build_table_row(self, r: dict, show_org: bool, show_proxy: bool, show_domain: bool) -> list[str]:
+    def _build_table_row(
+        self, r: dict, show_org: bool, show_proxy: bool, show_domain: bool, show_greynoise: bool
+    ) -> list[str]:
         if r.get("error"):
             row = [r["ip"]]
             if show_org:
@@ -102,6 +111,8 @@ class ResultFormatter:
             if show_proxy:
                 row.append("")
             if show_domain:
+                row.append("")
+            if show_greynoise:
                 row.append("")
             row.append(f"[red]ERROR: {r['error']}[/red]")
             row.append("")
@@ -114,6 +125,8 @@ class ResultFormatter:
             row.append(self._format_proxy_cell(r))
         if show_domain:
             row.append(r.get("domain") or "-")
+        if show_greynoise:
+            row.append(self._format_greynoise_cell(r))
         row.append(self._format_network_cell(r))
         row.append(self._format_location_cell(r))
         return row
@@ -137,6 +150,23 @@ class ResultFormatter:
             parts.append(f"({result['usage_type']})")
         return " ".join(parts) if parts else "-"
 
+    def _format_greynoise_panel_line(self, result: dict) -> Text | None:
+        if not result.get("greynoise_seen"):
+            return None
+        classification = result.get("greynoise_classification") or "unknown"
+        color = {"malicious": "red", "suspicious": "yellow"}.get(classification, "dim")
+        line = Text("GreyNoise: ", style="bright_yellow") + Text(classification, style=color)
+        if result.get("greynoise_3wh") is not None:
+            line += Text(f"  3WH: {'✓' if result['greynoise_3wh'] else '✗'}", style="dim")
+        return line
+
+    def _format_greynoise_cell(self, result: dict) -> str:
+        if not result.get("greynoise_seen"):
+            return "-"
+        classification = result.get("greynoise_classification") or "unknown"
+        color = {"malicious": "red", "suspicious": "yellow"}.get(classification, "dim")
+        return f"[{color}]{classification}[/{color}]"
+
     def _format_network_cell(self, result: dict) -> str:
         if result.get("asn"):
             asn_str = f"AS{result['asn']}"
@@ -155,15 +185,18 @@ class ResultFormatter:
 
         show_org = capabilities is None or capabilities.has_org
         show_proxy = capabilities is None or capabilities.has_proxy
+        show_domain = capabilities is None or capabilities.has_ipinfo
+        show_greynoise = capabilities is None or capabilities.has_greynoise
 
         fieldnames = ["ip"]
         if show_org:
             fieldnames.extend(["org_managed", "org_id", "platform"])
         if show_proxy:
             fieldnames.append("proxy_type")
-        show_domain = capabilities is None or capabilities.has_ipinfo
         if show_domain:
             fieldnames.append("domain")
+        if show_greynoise:
+            fieldnames.extend(["greynoise_seen", "greynoise_classification", "greynoise_3wh"])
         fieldnames.extend(["city", "region", "country", "iso_code", "postal"])
         if show_proxy:
             fieldnames.extend(["isp", "usage_type"])

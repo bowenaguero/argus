@@ -20,4 +20,11 @@ API_KEYS = [
         "info": "Get your free IPinfo access token (no credit card required):",
         "link": "https://ipinfo.io/signup",
     },
+    {
+        "key": "greynoise_api_key",
+        "name": "GreyNoise",
+        "prompt": "Enter your GreyNoise API key",
+        "info": "Get your free GreyNoise API key:",
+        "link": "https://viz.greynoise.io",
+    },
 ]

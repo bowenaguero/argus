@@ -151,6 +151,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "geoip2" },
+    { name = "greynoise-psychic" },
     { name = "ip2proxy" },
     { name = "maxminddb" },
     { name = "openpyxl" },
@@ -176,6 +177,7 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.0" },
     { name = "geoip2", specifier = ">=4.8.0" },
+    { name = "greynoise-psychic", git = "https://github.com/GreyNoise-Intelligence/greynoise-psychic.git?subdirectory=python" },
     { name = "ip2proxy", specifier = ">=3.2.4" },
     { name = "maxminddb", specifier = ">=2.6.0" },
     { name = "openpyxl", specifier = ">=3.1.0" },
@@ -667,6 +669,14 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/18/70/3d9e87289f79713aaf0fea9df4aa8e68776640fe59beb6299bb214610cfd/geoip2-5.2.0.tar.gz", hash = "sha256:6c9ded1953f8eb16043ed0a8ea20e6e9524ea7b65eb745724e12490aca44ef00", size = 176498, upload-time = "2025-11-20T18:21:08.874Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/d2/d55df737199a52b9d06e742ed2a608c525f0677e40375951372e65714fbd/geoip2-5.2.0-py3-none-any.whl", hash = "sha256:3d1546fd4eb7cad20445d027d2d9e81d3a71c074e019383f30db5d45e2c23320", size = 28991, upload-time = "2025-11-20T18:21:07.178Z" },
+]
+
+[[package]]
+name = "greynoise-psychic"
+version = "1.0.0"
+source = { git = "https://github.com/GreyNoise-Intelligence/greynoise-psychic.git?subdirectory=python#bf7962edf2ac993ff981ccc0129dcd06ec8d4f4d" }
+dependencies = [
+    { name = "requests" },
 ]
 
 [[package]]

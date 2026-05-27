@@ -304,7 +304,7 @@ class TestResultFormatter:
             {"ip": "8.8.8.8", "city": "MV", "country": "US", "asn": 15169, "asn_org": "Google", "error": None},
         ]
         table = assert_is_table(formatter.format_table(results))
-        assert len(table.columns) == 6
+        assert len(table.columns) == 7
 
     def test_format_csv_excludes_org_fields(self):
         console = MagicMock()
