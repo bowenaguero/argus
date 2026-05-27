@@ -52,7 +52,7 @@ ip,org_id,platform
 10.0.0.2,org-identifier-2,azure
 ```
 
-**JSON** (array of objects with `ip`, `org_id`, `platform`):
+**JSON** (array of objects with `ip`, `org_id`, `platform` keys):
 
 ```json
 [
